@@ -1,10 +1,8 @@
 #![allow(unused_imports)]
-use std::io::Read;
-use std::io::Write;
-use std::net::TcpListener;
-use std::net::IpAddr;
-use std::net::TcpStream;
+use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpSocket, TcpStream};
 
 struct RedisServer {
     addr: IpAddr,
@@ -19,23 +17,30 @@ impl RedisServer {
         }
     }
 
-    fn run(&self) -> () {
-        let listener = TcpListener::bind(format!("{}:{}", self.addr.to_string(), self.port)).unwrap();
+    async fn stream_handler(&self, mut stream: TcpStream, addr: SocketAddr) {
+        // TODO: Read PING specifically later
+        println!("New TCP connection from {:?}", addr);
+        tokio::spawn(async move {
+            let mut buffer = [0; 512];
+            loop {
+                let data = stream.read(&mut buffer).await.unwrap();
+                if data == 0 {
+                    println!("TCP connection from {:?} closed", addr);
+                    break;
+                }
+                stream.write_all(b"+PONG\r\n").await.unwrap()
+            }
+        });
+    }
+
+    async fn run(&self) -> () {
+        let listener = TcpListener::bind(format!("{}:{}", self.addr.to_string(), self.port)).await.unwrap();
         println!("Redis Server is running on {}:{}", self.addr.to_string(), self.port);
-        for stream in listener.incoming() {
+        loop {
+            let stream = listener.accept().await;
             match stream {
-                Ok(mut stream) => {
-                    // TODO: Read PING specifically later
-                    println!("New TCP connection from {}", stream.peer_addr().unwrap());
-                    let mut buffer = [0; 512];
-                    loop {
-                        let data = stream.read(&mut buffer).unwrap();
-                        if data == 0 {
-                            println!("TCP connection from {} closed", stream.peer_addr().unwrap());
-                            break;
-                        }
-                        stream.write_all(b"+PONG\r\n").unwrap()
-                    };
+                Ok((stream, addr)) => {
+                    self.stream_handler(stream, addr).await
                 }
                 Err(e) => {
                     println!("error: {}", e);
@@ -46,7 +51,8 @@ impl RedisServer {
 }
 
 
-fn main() {    
+#[tokio::main]
+async fn main() {    
     let redis_server = RedisServer::new("127.0.0.1", 6379);
-    redis_server.run()
+    redis_server.run().await
 }
