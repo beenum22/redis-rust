@@ -26,7 +26,16 @@ impl RedisServer {
             match stream {
                 Ok(mut stream) => {
                     // TODO: Read PING specifically later
-                    stream.write_all(b"+PONG\r\n").unwrap()
+                    println!("New TCP connection from {}", stream.peer_addr().unwrap());
+                    let mut buffer = [0; 512];
+                    loop {
+                        let data = stream.read(&mut buffer).unwrap();
+                        if data == 0 {
+                            println!("TCP connection from {} closed", stream.peer_addr().unwrap());
+                            break;
+                        }
+                        stream.write_all(b"+PONG\r\n").unwrap()
+                    };
                 }
                 Err(e) => {
                     println!("error: {}", e);
