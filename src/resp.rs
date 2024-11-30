@@ -371,8 +371,8 @@ impl RedisRespWord {
 
     fn encode(word: Self) -> Result<RedisRespType, RedisRespError> {
         match word {
-            RedisRespWord::Echo(val) => Ok(RedisRespType::BulkString(val)),
-            RedisRespWord::Ok => Ok(RedisRespType::BulkString("Ok".to_string())),
+            RedisRespWord::Echo(val) => Ok(RedisRespType::String(val)),
+            RedisRespWord::Ok => Ok(RedisRespType::String("Ok".to_string())),
             RedisRespWord::Nil => Ok(RedisRespType::Null),
             RedisRespWord::Error(val) => Ok(RedisRespType::Error(val)),
             _ => Err(RedisRespError::UnknownCommand),
