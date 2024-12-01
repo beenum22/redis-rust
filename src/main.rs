@@ -1,6 +1,5 @@
 #![allow(unused_imports)]
 use bytes::{Bytes, BytesMut};
-use tokio::sync::{Mutex, RwLock};
 use core::str;
 use std::char::ToLowercase;
 use std::collections::{HashMap, HashSet};
@@ -11,6 +10,7 @@ use std::time::SystemTime;
 use std::usize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
+use tokio::sync::{Mutex, RwLock};
 
 mod resp;
 use resp::{RedisResp, RedisRespError, RedisRespType, RedisRespWord, SetMap, SetOverwriteArgs};
@@ -21,13 +21,13 @@ struct RedisBuffer {
 }
 
 struct RedisState {
-    state: RwLock<HashMap<String, SetMap>>
+    state: RwLock<HashMap<String, SetMap>>,
 }
 
 struct RedisServer {
     addr: IpAddr,
     port: u16,
-    db: Arc<RedisState>
+    db: Arc<RedisState>,
 }
 
 impl RedisServer {
@@ -36,12 +36,15 @@ impl RedisServer {
             addr: IpAddr::from_str(addr).unwrap(),
             port: port,
             db: Arc::new(RedisState {
-                state: RwLock::new(HashMap::new())
-            })
+                state: RwLock::new(HashMap::new()),
+            }),
         }
     }
 
-    async fn _action(db: Arc<RedisState>, word: RedisRespWord) -> Result<RedisRespWord, RedisRespError> {
+    async fn _action(
+        db: Arc<RedisState>,
+        word: RedisRespWord,
+    ) -> Result<RedisRespWord, RedisRespError> {
         match word {
             RedisRespWord::Ping => Ok(RedisRespWord::Echo("PONG".to_string())),
             RedisRespWord::Echo(_) => Ok(word),
@@ -61,7 +64,7 @@ impl RedisServer {
                                 } else {
                                     Ok(RedisRespWord::Nil)
                                 }
-                            },
+                            }
                             SetOverwriteArgs::XX => {
                                 if key_state.is_some() {
                                     drop(db_ro);
@@ -74,15 +77,15 @@ impl RedisServer {
                                 }
                             }
                         }
-                    },
+                    }
                     None => {
                         let mut db_rw = db.state.write().await; // Get write lock
                         db_rw.insert(set_args.key.clone(), set_args);
                         drop(db_rw);
                         Ok(RedisRespWord::Ok)
-                    },
+                    }
                 }
-            },
+            }
             RedisRespWord::Get(val) => {
                 let mut db_ro = db.state.read().await; // Get read lock
                 match db_ro.get(&val) {
@@ -98,9 +101,9 @@ impl RedisServer {
                                         db_rw.remove(&val);
                                         drop(db_rw);
                                         Ok(RedisRespWord::Nil)
-                                    },
+                                    }
                                 }
-                            },
+                            }
                             None => Ok(RedisRespWord::Echo(value_map.val.clone())),
                         }
                     }
@@ -139,14 +142,14 @@ impl RedisServer {
                                     .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
                                     .await
                                     .unwrap(),
-                            } 
+                            },
                             // stream.write_all(reply.as_ref()).await.unwrap(),
                             Err(err) => stream
                                 .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
                                 .await
                                 .unwrap(),
                         }
-                    },
+                    }
                     Err(err) => stream
                         .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
                         .await
