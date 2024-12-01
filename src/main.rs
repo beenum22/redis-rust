@@ -7,6 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::SystemTime;
 use std::usize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
@@ -55,6 +56,7 @@ impl RedisServer {
                                     drop(db_ro);
                                     let mut db_rw = db.state.write().await; // Get write lock
                                     db_rw.insert(set_args.key.clone(), set_args);
+                                    drop(db_rw);
                                     Ok(RedisRespWord::Ok)
                                 } else {
                                     Ok(RedisRespWord::Nil)
@@ -65,6 +67,7 @@ impl RedisServer {
                                     drop(db_ro);
                                     let mut db_rw = db.state.write().await; // Get write lock
                                     db_rw.insert(set_args.key.clone(), set_args);
+                                    drop(db_rw);
                                     Ok(RedisRespWord::Ok)
                                 } else {
                                     Ok(RedisRespWord::Nil)
@@ -75,14 +78,32 @@ impl RedisServer {
                     None => {
                         let mut db_rw = db.state.write().await; // Get write lock
                         db_rw.insert(set_args.key.clone(), set_args);
+                        drop(db_rw);
                         Ok(RedisRespWord::Ok)
                     },
                 }
             },
             RedisRespWord::Get(val) => {
-                let mut db = db.state.read().await; // Get read lock
-                match db.get(&val) {
-                    Some(value_map) => Ok(RedisRespWord::Echo(value_map.val.clone())),
+                let mut db_ro = db.state.read().await; // Get read lock
+                match db_ro.get(&val) {
+                    Some(value_map) => {
+                        match value_map.expiry_timestamp {
+                            Some(expiry) => {
+                                let now = SystemTime::now();
+                                match now > expiry {
+                                    false => Ok(RedisRespWord::Echo(value_map.val.clone())),
+                                    true => {
+                                        drop(db_ro);
+                                        let mut db_rw = db.state.write().await; // Get write lock
+                                        db_rw.remove(&val);
+                                        drop(db_rw);
+                                        Ok(RedisRespWord::Nil)
+                                    },
+                                }
+                            },
+                            None => Ok(RedisRespWord::Echo(value_map.val.clone())),
+                        }
+                    }
                     None => Ok(RedisRespWord::Nil),
                 }
             }

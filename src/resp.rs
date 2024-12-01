@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use core::str;
 use std::{
-    collections::HashMap, io::Read, str::FromStr, time::{Duration, SystemTime, UNIX_EPOCH}
+    alloc::System, collections::HashMap, io::Read, str::FromStr, time::{Duration, SystemTime}
 };
 
 use crate::RedisBuffer;
@@ -23,6 +23,7 @@ pub(crate) enum RedisRespError {
     InvalidArraySize,
     InvalidArgValue(String),
     MissingArgs,
+    SystemError(String),
     SyntaxError,
     IOError(std::io::Error),
 }
@@ -107,11 +108,11 @@ impl RedisRespType {
     }
 
     fn decode_string(raw: &mut RedisBuffer) -> Result<String, RedisRespError> {
-        let mut value_index = Self::_get_value(raw).map_err(|err| RedisRespError::ParsingError)?;
+        let mut value_index = Self::_get_value(raw).map_err(|_| RedisRespError::ParsingError)?;
         match value_index {
             Some(index) => {
                 let buff_ref = &raw.buffer[index.start..index.end + 1];
-                String::from_utf8(buff_ref.to_vec()).map_err(|err| RedisRespError::ParsingError)
+                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisRespError::ParsingError)
             }
             None => Err(RedisRespError::InvalidValue),
         }
@@ -214,6 +215,7 @@ pub(crate) struct SetMap {
     pub(crate) val: String,
     pub(crate) overwrite: Option<SetOverwriteArgs>,
     keepttl: Option<bool>,
+    pub(crate) expiry_timestamp: Option<SystemTime>
 }
 
 pub(crate) enum RedisRespWord {
@@ -239,7 +241,9 @@ impl RedisRespWord {
             val: String::new(),
             overwrite: None,
             keepttl: None,
+            expiry_timestamp: None,
         };
+    
         if args.len() == 0 {
             return Err(RedisRespError::MissingArgs)
         }
@@ -251,78 +255,99 @@ impl RedisRespWord {
             RedisRespType::BulkString(val) => (*val).to_string(),
             _ => return Err(RedisRespError::InvalidValueType)
         };
-        for i in 2..args.len() {
+        let mut i: usize = 2;
+        while i < args.len() {
+        // for i in 2..args.len() {
             match &args[i] {
                 RedisRespType::BulkString(val) => {
                     match val.as_str() {
                         "EX" => {
-                            // assert!(set_args.expiry.is_none(), "Expiry is already set!");
-                            let expiry = args.get(i + 1);
+                            if set_args.expiry.is_some() {
+                                return Err(RedisRespError::SyntaxError)
+                            }
+                            i += 1;  // Move to next arg value
+                            let expiry = args.get(i);
                             match expiry {
                                 Some(val) => {
                                     match val {
                                         RedisRespType::BulkString(arg_val) => {
                                             let expiry_secs: u64 = arg_val.parse().map_err(|err| RedisRespError::InvalidArgValue("value is not an integer or out of range".to_string()))?;
-                                            set_args.expiry = Some(SetExpiryArgs::EX(expiry_secs))},
-                                        _ => return Err(RedisRespError::InvalidValue)
+                                            set_args.expiry_timestamp = Some(SystemTime::now() + Duration::from_secs(expiry_secs));
+                                            set_args.expiry = Some(SetExpiryArgs::EX(expiry_secs))
+                                        },
+                                        _ => return Err(RedisRespError::InvalidValueType)
                                     }
                                 },
-                                None => return Err(RedisRespError::InvalidValue),
+                                None => return Err(RedisRespError::SyntaxError),
                             };
                         },
                         "PX" => {
-                            // assert!(set_args.expiry.is_none(), "Expiry is already set!");
-                            let expiry = args.get(i + 1);
+                            if set_args.expiry.is_some() {
+                                return Err(RedisRespError::SyntaxError)
+                            }
+                            i += 1;  // Move to next arg value
+                            let expiry = args.get(i);
                             match expiry {
                                 Some(val) => {
                                     match val {
                                         RedisRespType::BulkString(arg_val) => {
                                             let expiry: u128 = arg_val.parse().map_err(|err| RedisRespError::InvalidArgValue("value is not an integer or out of range".to_string()))?;
+                                            set_args.expiry_timestamp = Some(SystemTime::now() + Duration::from_millis(expiry as u64));
                                             set_args.expiry = Some(SetExpiryArgs::PX(expiry))},
-                                        _ => return Err(RedisRespError::InvalidValue)
+                                        _ => return Err(RedisRespError::InvalidValueType)
                                     }
                                 },
-                                None => return Err(RedisRespError::InvalidValue),
+                                None => return Err(RedisRespError::SyntaxError),
                             };
                         },
                         "EXAT" => {
-                            // assert!(set_args.expiry.is_none(), "Expiry is already set!");
-                            let expiry = args.get(i + 1);
+                            if set_args.expiry.is_some() {
+                                return Err(RedisRespError::SyntaxError)
+                            }
+                            i += 1;  // Move to next arg value
+                            let expiry = args.get(i);
                             match expiry {
                                 Some(val) => {
                                     match val {
                                         RedisRespType::BulkString(arg_val) => {
                                             let expiry: u64 = arg_val.parse().map_err(|err| RedisRespError::InvalidArgValue("value is not an integer or out of range".to_string()))?;
+                                            let now = SystemTime::now();
+                                            set_args.expiry_timestamp = Some(SystemTime::now() + Duration::from_secs(expiry));
                                             set_args.expiry = Some(SetExpiryArgs::EXAT(expiry))},
-                                        _ => return Err(RedisRespError::InvalidValue)
+                                        _ => return Err(RedisRespError::InvalidValueType)
                                     }
                                 },
-                                None => return Err(RedisRespError::InvalidValue),
+                                None => return Err(RedisRespError::SyntaxError),
                             };
                         },
                         "PXAT" => {
-                            // assert!(set_args.expiry.is_none(), "Expiry is already set!");
-                            let expiry = args.get(i + 1);
+                            if set_args.expiry.is_some() {
+                                return Err(RedisRespError::SyntaxError)
+                            }
+                            i += 1;  // Move to next arg value
+                            let expiry = args.get(i);
                             match expiry {
                                 Some(val) => {
                                     match val {
                                         RedisRespType::BulkString(arg_val) => {
                                             let expiry: u128 = arg_val.parse().map_err(|err| RedisRespError::InvalidArgValue("value is not an integer or out of range".to_string()))?;
+                                            set_args.expiry_timestamp = Some(SystemTime::now() + Duration::from_millis(expiry as u64));
                                             set_args.expiry = Some(SetExpiryArgs::PXAT(expiry))},
-                                        _ => return Err(RedisRespError::InvalidValue)
+                                        _ => return Err(RedisRespError::InvalidValueType)
                                     }
                                 },
-                                None => return Err(RedisRespError::InvalidValue),
+                                None => return Err(RedisRespError::SyntaxError),
                             };
                         },
                         "NX" => set_args.overwrite = Some(SetOverwriteArgs::NX),
                         "XX" => set_args.overwrite = Some(SetOverwriteArgs::XX),
                         "KEEPTTL" => set_args.keepttl = Some(true),
-                        _ => return Err(RedisRespError::InvalidValue)
+                        _ => return Err(RedisRespError::SyntaxError)
                     }
                 },
                 _ => return Err(RedisRespError::InvalidValueType)
             }
+            i += 1;
         }
         Ok(set_args)
     }
@@ -374,7 +399,6 @@ impl RedisRespWord {
             RedisRespWord::Echo(val) => Ok(RedisRespType::BulkString(val)),
             RedisRespWord::Ok => Ok(RedisRespType::BulkString("OK".to_string())),
             RedisRespWord::Nil => Ok(RedisRespType::Null),
-            // RedisRespWord::Nil => Ok(RedisRespType::Null),
             RedisRespWord::Error(val) => Ok(RedisRespType::Error(val)),
             _ => Err(RedisRespError::UnknownCommand),
         }
