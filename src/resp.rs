@@ -197,7 +197,9 @@ impl RedisRespType {
     }
 
     fn encode_null() -> Result<Bytes, RedisRespError> {
-        Ok(Bytes::from("_\r\n"))
+        // TODO: Commented out in favor of BulkString Null to support RESP 2 tests. Fix later for RESP 3.
+        // Ok(Bytes::from("_\r\n"))
+        Ok(Bytes::from("$-1\r\n"))
     }
 }
 
