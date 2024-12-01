@@ -264,8 +264,8 @@ impl RedisRespWord {
             // for i in 2..args.len() {
             match &args[i] {
                 RedisRespType::BulkString(val) => {
-                    match val.as_str() {
-                        "EX" => {
+                    match val.to_lowercase().as_str() {
+                        "ex" => {
                             if set_args.expiry.is_some() {
                                 return Err(RedisRespError::SyntaxError);
                             }
@@ -290,7 +290,7 @@ impl RedisRespWord {
                                 None => return Err(RedisRespError::SyntaxError),
                             };
                         }
-                        "PX" => {
+                        "px" => {
                             if set_args.expiry.is_some() {
                                 return Err(RedisRespError::SyntaxError);
                             }
@@ -316,7 +316,7 @@ impl RedisRespWord {
                                 None => return Err(RedisRespError::SyntaxError),
                             };
                         }
-                        "EXAT" => {
+                        "exat" => {
                             if set_args.expiry.is_some() {
                                 return Err(RedisRespError::SyntaxError);
                             }
@@ -341,7 +341,7 @@ impl RedisRespWord {
                                 None => return Err(RedisRespError::SyntaxError),
                             };
                         }
-                        "PXAT" => {
+                        "pxat" => {
                             if set_args.expiry.is_some() {
                                 return Err(RedisRespError::SyntaxError);
                             }
@@ -367,9 +367,9 @@ impl RedisRespWord {
                                 None => return Err(RedisRespError::SyntaxError),
                             };
                         }
-                        "NX" => set_args.overwrite = Some(SetOverwriteArgs::NX),
-                        "XX" => set_args.overwrite = Some(SetOverwriteArgs::XX),
-                        "KEEPTTL" => set_args.keepttl = Some(true),
+                        "nx" => set_args.overwrite = Some(SetOverwriteArgs::NX),
+                        "xx" => set_args.overwrite = Some(SetOverwriteArgs::XX),
+                        "keepttl" => set_args.keepttl = Some(true),
                         _ => return Err(RedisRespError::SyntaxError),
                     }
                 }
