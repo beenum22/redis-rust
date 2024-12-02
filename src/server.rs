@@ -1,14 +1,17 @@
+use bytes::{Bytes, BytesMut};
+use std::collections::HashMap;
+use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::SystemTime;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use std::net::{IpAddr, SocketAddr};
-use std::sync::Arc;
-use std::collections::HashMap;
-use std::str::FromStr;
-use std::time::SystemTime;
-use bytes::{Bytes, BytesMut};
 
-use crate::{RedisBuffer, RedisState, RespParser, Operation, RedisError, Config, ConfigParam, ConfigOperation, SetOverwriteArgs};
+use crate::{
+    Config, ConfigOperation, ConfigParam, Operation, RedisBuffer, RedisError, RedisState,
+    RespParser, SetOverwriteArgs,
+};
 
 pub(crate) struct RedisServer {
     addr: IpAddr,
@@ -21,14 +24,14 @@ impl RedisServer {
         Self {
             addr: IpAddr::from_str(addr).unwrap(),
             port: port,
-            db: Arc::new(RedisState::new(RwLock::new(HashMap::new()), RwLock::new(Config::new())))
+            db: Arc::new(RedisState::new(
+                RwLock::new(HashMap::new()),
+                RwLock::new(Config::new()),
+            )),
         }
     }
 
-    async fn _action(
-        db: Arc<RedisState>,
-        word: Operation,
-    ) -> Result<Operation, RedisError> {
+    async fn _action(db: Arc<RedisState>, word: Operation) -> Result<Operation, RedisError> {
         match word {
             Operation::Ping => Ok(Operation::Echo("PONG".to_string())),
             Operation::Echo(_) => Ok(word),
@@ -96,7 +99,7 @@ impl RedisServer {
             }
             Operation::Config(val_arr) => {
                 if val_arr.len() == 0 {
-                    return Err(RedisError::UnknownConfig)
+                    return Err(RedisError::UnknownConfig);
                 }
                 match &val_arr[0] {
                     ConfigOperation::Get(_) => {
@@ -109,30 +112,34 @@ impl RedisServer {
                                             let config_ro = db.config.read().await; // Get read lock
                                             match &config_ro.dir {
                                                 Some(value) => {
-                                                    config_arr.push(Operation::Echo(value.0.to_string()));
-                                                    config_arr.push(Operation::Echo(value.1.to_string()));
-                                                },
+                                                    config_arr
+                                                        .push(Operation::Echo(value.0.to_string()));
+                                                    config_arr
+                                                        .push(Operation::Echo(value.1.to_string()));
+                                                }
                                                 None => (),
                                             }
-                                        },
+                                        }
                                         ConfigParam::DbFileName(_) => {
                                             let config_ro = db.config.read().await; // Get read lock
                                             match &config_ro.dbfilename {
                                                 Some(value) => {
-                                                    config_arr.push(Operation::Echo(value.0.to_string()));
-                                                    config_arr.push(Operation::Echo(value.1.to_string()));
-                                                },
+                                                    config_arr
+                                                        .push(Operation::Echo(value.0.to_string()));
+                                                    config_arr
+                                                        .push(Operation::Echo(value.1.to_string()));
+                                                }
                                                 None => (),
                                             }
-                                        },
-                                        _ => ()
+                                        }
+                                        _ => (),
                                     }
-                                },
+                                }
                                 _ => (),
                             }
-                        };
+                        }
                         Ok(Operation::EchoArray(config_arr))
-                    },
+                    }
                     ConfigOperation::Set(_) => {
                         for i in 0..val_arr.len() {
                             match &val_arr[i] {
@@ -140,20 +147,20 @@ impl RedisServer {
                                     ConfigParam::Dir(val) => {
                                         let mut config_rw = db.config.write().await; // Get write lock
                                         config_rw.dir = val.clone();
-                                    },
+                                    }
                                     ConfigParam::DbFileName(val) => {
                                         let mut config_rw = db.config.write().await; // Get write lock
                                         config_rw.dbfilename = val.clone();
-                                    },
-                                    _ => ()
+                                    }
+                                    _ => (),
                                 },
                                 _ => (),
                             }
-                        };
+                        }
                         Ok(Operation::Ok)
                     }
                 }
-            },
+            }
             Operation::Unknown => Err(RedisError::UnknownCommand),
             _ => Err(RedisError::UnknownCommand),
         }

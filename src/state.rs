@@ -11,10 +11,7 @@ pub(crate) struct RedisState {
 
 impl RedisState {
     pub(crate) fn new(state: RwLock<HashMap<String, SetMap>>, config: RwLock<Config>) -> Self {
-        Self {
-            state,
-            config,
-        }
+        Self { state, config }
     }
 }
 

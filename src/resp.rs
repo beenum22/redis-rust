@@ -8,7 +8,9 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use crate::{RedisBuffer, RedisError, ConfigParam, ConfigOperation, SetMap, SetOverwriteArgs, SetExpiryArgs};
+use crate::{
+    ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs,
+};
 
 #[derive(Debug)]
 struct RespValueIndex {
@@ -348,7 +350,7 @@ impl Operation {
             RespType::BulkString(val_str) => match val_str.to_lowercase().as_str() {
                 "dir" => Ok(ConfigParam::Dir(None)),
                 "dbfilename" => Ok(ConfigParam::DbFileName(None)),
-                _ => Ok(ConfigParam::Unknown)
+                _ => Ok(ConfigParam::Unknown),
             },
             _ => return Err(RedisError::InvalidValueType),
         }
@@ -359,7 +361,7 @@ impl Operation {
 
      */
 
-     fn _decode_config_get(args: &[RespType]) -> Result<Vec<ConfigOperation>, RedisError> {
+    fn _decode_config_get(args: &[RespType]) -> Result<Vec<ConfigOperation>, RedisError> {
         if args.len() == 0 {
             return Err(RedisError::MissingArgs);
         };
@@ -384,24 +386,26 @@ impl Operation {
         let mut arr: Vec<ConfigOperation> = Vec::new();
         for pair in args.windows(2) {
             if pair.len() < 2 {
-                return Err(RedisError::SyntaxError)
+                return Err(RedisError::SyntaxError);
             }
-            arr.push(ConfigOperation::Set(
-                match &pair[0] {
-                    RespType::BulkString(key_str) => match key_str.to_lowercase().as_str() {
-                        "dir" => ConfigParam::Dir(match &pair[1] {
-                            RespType::BulkString(val_str) => Some((key_str.to_string(), val_str.to_string())),
-                            _ => return Err(RedisError::InvalidValueType)
-                        }),
-                        "dbfilename" => ConfigParam::DbFileName(match &pair[1] {
-                            RespType::BulkString(val_str) => Some((key_str.to_string(), val_str.to_string())),
-                            _ => return Err(RedisError::InvalidValueType)
-                        }),
-                        _ => continue
-                    },
-                    _ => return Err(RedisError::InvalidValueType),
-                })
-            );
+            arr.push(ConfigOperation::Set(match &pair[0] {
+                RespType::BulkString(key_str) => match key_str.to_lowercase().as_str() {
+                    "dir" => ConfigParam::Dir(match &pair[1] {
+                        RespType::BulkString(val_str) => {
+                            Some((key_str.to_string(), val_str.to_string()))
+                        }
+                        _ => return Err(RedisError::InvalidValueType),
+                    }),
+                    "dbfilename" => ConfigParam::DbFileName(match &pair[1] {
+                        RespType::BulkString(val_str) => {
+                            Some((key_str.to_string(), val_str.to_string()))
+                        }
+                        _ => return Err(RedisError::InvalidValueType),
+                    }),
+                    _ => continue,
+                },
+                _ => return Err(RedisError::InvalidValueType),
+            }));
         }
         Ok(arr)
     }
@@ -415,7 +419,6 @@ impl Operation {
                 "get" => Self::_decode_config_get(&args[1..]),
                 "set" => Self::_decode_config_set(&args[1..]),
                 _ => return Err(RedisError::SyntaxError),
-                
             },
             _ => return Err(RedisError::InvalidValueType),
         }
@@ -469,7 +472,7 @@ impl Operation {
                     arr.push(Self::encode(val[i].clone())?);
                 }
                 Ok(RespType::Array(arr))
-            },
+            }
             Operation::Ok => Ok(RespType::BulkString("OK".to_string())),
             Operation::Nil => Ok(RespType::Null),
             Operation::Error(val) => Ok(RespType::Error(val)),

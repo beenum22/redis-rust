@@ -1,24 +1,24 @@
 #![allow(unused_imports)]
 use bytes::{Bytes, BytesMut};
-use tokio::sync::RwLock;
 use core::str;
 use std::char::ToLowercase;
 use std::collections::{HashMap, HashSet};
 use std::net::{IpAddr, SocketAddr};
 use std::usize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::sync::RwLock;
 
-mod resp;
+mod config;
 mod error;
+mod resp;
 mod server;
 mod state;
-mod config;
 
-use resp::{RespParser, RespType, Operation};
+use config::{Config, ConfigOperation, ConfigParam};
 use error::RedisError;
+use resp::{Operation, RespParser, RespType};
 use server::RedisServer;
-use state::{RedisState, SetMap, SetOverwriteArgs, SetExpiryArgs};
-use config::{Config, ConfigParam, ConfigOperation};
+use state::{RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
 
 struct RedisBuffer {
     index: usize,

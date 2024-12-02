@@ -2,7 +2,7 @@
 pub(crate) enum ConfigParam {
     Dir(Option<(String, String)>),
     DbFileName(Option<(String, String)>),
-    Unknown
+    Unknown,
 }
 
 #[derive(Clone)]
