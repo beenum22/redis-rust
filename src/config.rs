@@ -17,10 +17,10 @@ pub(crate) struct Config {
 }
 
 impl Config {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(dir: String, dbfilename: String) -> Self {
         Config {
-            dir: Some(("dir".to_string(), "/data".to_string())),
-            dbfilename: Some(("dbfilename".to_string(), "dump.rdb".to_string())),
+            dir: Some(("dir".to_string(), dir)),
+            dbfilename: Some(("dbfilename".to_string(), dbfilename)),
         }
     }
 }

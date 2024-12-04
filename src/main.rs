@@ -7,6 +7,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::usize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::RwLock;
+use clap::Parser;
 
 mod config;
 mod error;
@@ -25,8 +26,26 @@ struct RedisBuffer {
     buffer: Bytes,
 }
 
+#[derive(Parser)]
+#[command(version)]
+struct Cli {
+    #[arg(long, default_value = "127.0.0.1")]
+    host: String,
+
+    #[arg(long, default_value_t = 6379)]
+    port: u16,
+
+    #[arg(long, default_value = "/data")]
+    dir: String,
+
+    #[arg(long, default_value = "dump.rdb")]
+    dbfilename: String,
+}
+
 #[tokio::main]
 async fn main() {
-    let redis_server = RedisServer::new("127.0.0.1", 6379);
+    let args = Cli::parse();
+
+    let redis_server = RedisServer::new(args.host.as_str(), args.port, args.dir, args.dbfilename);
     redis_server.run().await
 }

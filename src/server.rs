@@ -20,13 +20,13 @@ pub(crate) struct RedisServer {
 }
 
 impl RedisServer {
-    pub(crate) fn new(addr: &str, port: u16) -> Self {
+    pub(crate) fn new(addr: &str, port: u16, dir: String, dbfilename: String) -> Self {
         Self {
             addr: IpAddr::from_str(addr).unwrap(),
             port: port,
             db: Arc::new(RedisState::new(
                 RwLock::new(HashMap::new()),
-                RwLock::new(Config::new()),
+                RwLock::new(Config::new(dir, dbfilename)),
             )),
         }
     }
