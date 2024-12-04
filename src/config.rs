@@ -19,8 +19,8 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn new() -> Self {
         Config {
-            dir: None,
-            dbfilename: None,
+            dir: Some(("dir".to_string(), "/data".to_string())),
+            dbfilename: Some(("dbfilename".to_string(), "dump.rdb".to_string())),
         }
     }
 }
