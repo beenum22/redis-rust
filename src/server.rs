@@ -1,5 +1,6 @@
 use bytes::{Bytes, BytesMut};
 use std::collections::HashMap;
+use std::env::args;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -160,7 +161,24 @@ impl RedisServer {
                         Ok(Operation::Ok)
                     }
                 }
-            }
+            },
+            Operation::Keys(key) => {
+                let db_ro = db.state.read().await; // Get read lock
+                let mut arr: Vec<Operation> = Vec::new();
+                match key.as_str() {
+                    "*" => {
+                        for k in db_ro.keys() {
+                            arr.push(Operation::Echo(k.to_string()))
+                        }
+                    },
+                    _ => {
+                        if db_ro.contains_key(&key) {
+                            arr.push(Operation::Echo(key))
+                        }
+                    }
+                }
+                Ok(Operation::EchoArray(arr))
+            },
             Operation::Unknown => Err(RedisError::UnknownCommand),
             _ => Err(RedisError::UnknownCommand),
         }
@@ -182,6 +200,7 @@ impl RedisServer {
                     println!("TCP connection from {:?} closed", addr);
                     break;
                 }
+                println!("{:?}", &buff.buffer);
                 let mut resp = RespParser::new(buff);
 
                 match resp.decode() {

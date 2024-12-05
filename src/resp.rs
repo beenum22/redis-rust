@@ -196,6 +196,7 @@ pub(crate) enum Operation {
     Set(SetMap),
     Get(String),
     Config(Vec<ConfigOperation>),
+    Keys(String),
     Ok,
     Nil,
     EchoArray(Vec<Operation>),
@@ -361,6 +362,17 @@ impl Operation {
 
      */
 
+    fn _decode_keys(args: &[RespType]) -> Result<String, RedisError> {
+        if args.len() == 0 || args.len() > 1 {
+            return Err(RedisError::MissingArgs);
+        }
+
+        match &args[0] {
+            RespType::BulkString(val) => Ok(val.to_owned()),
+            _ => return Err(RedisError::InvalidValueType),
+        }
+    }
+
     fn _decode_config_get(args: &[RespType]) -> Result<Vec<ConfigOperation>, RedisError> {
         if args.len() == 0 {
             return Err(RedisError::MissingArgs);
@@ -455,6 +467,7 @@ impl Operation {
                     "set" => Ok(Self::Set(Self::_decode_set(&res[1..])?)),
                     "get" => Ok(Self::Get(Self::_decode_get(&res[1..])?)),
                     "config" => Ok(Self::Config(Self::_decode_config(&res[1..])?)),
+                    "keys" => Ok(Self::Keys(Self::_decode_keys(&res[1..])?)),
                     _ => Err(RedisError::UnknownCommand),
                 },
                 _ => Err(RedisError::UnknownCommand),
