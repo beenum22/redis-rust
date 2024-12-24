@@ -1,4 +1,7 @@
-#[derive(Debug)]
+use lzf::LzfError;
+
+
+#[derive(Debug, PartialEq)]
 pub(crate) enum RedisError {
     ParsingError,
     IncorrectBulkStringSize,
@@ -12,5 +15,26 @@ pub(crate) enum RedisError {
     MissingArgs,
     SystemError(String),
     SyntaxError,
-    IOError(std::io::Error),
+    RdbHexDecodeError,
+    RdbMissingMagicString,
+    RdbInvalidVersion,
+    RDB(RDBError),
+    InvalidUTF
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum RDBError {
+    MissingMagicString,
+    UnsupportedVersion,
+    InvalidVersion,
+    DbFileReadError,
+    MissingBytes,
+    MissingDbNumber,
+    InvalidEOF,
+    UnknownOpCode,
+    InvalidEncodingType,
+    InvalidLengthEncoding,
+    InvalidStringEncoding,
+    InvalidUtf8Encoding(Vec<u8>),
+    LzfCompressionError(LzfError),
 }

@@ -19,7 +19,7 @@ use config::{Config, ConfigOperation, ConfigParam};
 use error::RedisError;
 use resp::{Operation, RespParser, RespType};
 use server::RedisServer;
-use state::{RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
+use state::{RdbParser, RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
 
 struct RedisBuffer {
     index: usize,

@@ -1,11 +1,11 @@
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) enum ConfigParam {
     Dir(Option<(String, String)>),
     DbFileName(Option<(String, String)>),
     Unknown,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) enum ConfigOperation {
     Get(ConfigParam),
     Set(ConfigParam),

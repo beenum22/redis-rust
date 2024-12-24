@@ -189,7 +189,7 @@ impl RespType {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) enum Operation {
     Ping,
     Echo(String),
@@ -297,7 +297,6 @@ impl Operation {
                                                     .to_string(),
                                             )
                                         })?;
-                                        let now = SystemTime::now();
                                         set_args.expiry_timestamp =
                                             Some(SystemTime::now() + Duration::from_secs(expiry));
                                         set_args.expiry = Some(SetExpiryArgs::EXAT(expiry))
@@ -356,11 +355,6 @@ impl Operation {
             _ => return Err(RedisError::InvalidValueType),
         }
     }
-
-    /*
-    Bytes -> RespType -> Operation -> Operation -> RespType -> Bytes
-
-     */
 
     fn _decode_keys(args: &[RespType]) -> Result<String, RedisError> {
         if args.len() == 0 || args.len() > 1 {
@@ -506,16 +500,6 @@ impl RespParser {
     pub(crate) fn decode(&mut self) -> Result<Operation, RedisError> {
         let word_type = RespType::decode(&mut self.raw)?;
         Operation::decode(&mut self.raw, word_type)
-    }
-
-    pub(crate) fn action(&self, word: Operation) -> Result<Operation, RedisError> {
-        match word {
-            Operation::Ping => Ok(Operation::Echo("PONG".to_string())),
-            Operation::Echo(_) => Ok(word),
-            Operation::Set(set_args) => Ok(Operation::Ok),
-            Operation::Unknown => todo!(),
-            _ => todo!(),
-        }
     }
 
     pub(crate) fn encode(&mut self, word: Operation) -> Result<Bytes, RedisError> {
