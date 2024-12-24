@@ -12,7 +12,7 @@ use crate::{error::RDBError, error::RedisError, resp::Operation, Config};
 
 const RDB_MAGIC: &[u8] = b"REDIS";
 
-const RDB_VERSIONS: [&[u8; 4]; 1] = [b"0003"];
+const RDB_VERSIONS: [&[u8; 4]; 2] = [b"0003", b"0012"];
 
 pub(crate) struct RedisState {
     pub(crate) state: RwLock<HashMap<String, SetMap>>,
@@ -129,14 +129,14 @@ pub(crate) struct RdbDbResize {
 
 #[derive(Debug)]
 pub(crate) struct RdbSelectDb {
-    keys: Vec<Operation>,
+    pub(crate) keys: Vec<Operation>,
 }
 
 #[derive(Debug)]
 pub(crate) struct RdbParser {
     version: String,
-    aux_keys: Vec<RdbAuxField>,
-    dbs: HashMap<u8, RdbSelectDb>,
+    pub(crate) aux_keys: Vec<RdbAuxField>,
+    pub(crate) dbs: HashMap<u8, RdbSelectDb>,
 }
 
 impl RdbParser {
@@ -166,8 +166,8 @@ impl RdbParser {
     fn _verify_version<R: Read>(reader: &mut R) -> Result<String, RedisError> {
         let mut buf = [0u8; 4];
         match reader.read(&mut buf) {
-            Ok(4) => match RDB_VERSIONS.iter().any(|&x| x != &buf) {
-                true => return Err(RedisError::RDB(RDBError::UnsupportedVersion)),
+            Ok(4) => match RDB_VERSIONS.iter().all(|&x| x != &buf) {
+                true => return Err(RedisError::RDB(RDBError::UnsupportedVersion(String::from_utf8(buf.to_vec()).map_err(|_| RedisError::RDB(RDBError::InvalidVersion))?))),
                 false => Ok(str::from_utf8(&buf)
                     .map_err(|_| RedisError::RDB(RDBError::InvalidVersion))?
                     .to_owned()),
@@ -430,7 +430,10 @@ impl RdbParser {
                         None => return Err(RedisError::RDB(RDBError::MissingDbNumber)),
                     }
                 }
-                Ok(RdbOpCode::RESIZEDB) => return Err(RedisError::RDB(RDBError::UnknownOpCode)),
+                Ok(RdbOpCode::RESIZEDB) => {
+                    // Info not used anywhere
+                    Self::decode_resizedb(reader)?;
+                },
                 Ok(RdbOpCode::AUX) => parser.aux_keys.push(Self::decode_aux_field(reader)?),
                 Ok(RdbOpCode::Unknown(val)) => match select_db {
                     Some(db) => {
@@ -505,7 +508,7 @@ mod rdb_parser {
         assert!(invalid_ver.is_err());
         assert_eq!(
             invalid_ver.unwrap_err(),
-            RedisError::RDB(RDBError::UnsupportedVersion)
+            RedisError::RDB(RDBError::UnsupportedVersion("100".to_string()))
         );
 
         let valid_ver = RdbParser::_verify_version(&mut Cursor::new(b"0003FOOBAR"));
@@ -718,7 +721,7 @@ mod rdb_parser {
         assert!(invalid_ver.is_err());
         assert_eq!(
             invalid_ver.unwrap_err(),
-            RedisError::RDB(RDBError::UnsupportedVersion)
+            RedisError::RDB(RDBError::UnsupportedVersion("100".to_string()))
         );
 
         // Testcase for missing SelectDB

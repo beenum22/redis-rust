@@ -16,7 +16,7 @@ mod server;
 mod state;
 
 use config::{Config, ConfigOperation, ConfigParam};
-use error::RedisError;
+use error::{RedisError, RDBError};
 use resp::{Operation, RespParser, RespType};
 use server::RedisServer;
 use state::{RdbParser, RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};

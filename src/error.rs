@@ -24,7 +24,7 @@ pub(crate) enum RedisError {
 #[derive(Debug, PartialEq)]
 pub(crate) enum RDBError {
     MissingMagicString,
-    UnsupportedVersion,
+    UnsupportedVersion(String),
     InvalidVersion,
     DbFileReadError,
     MissingBytes,

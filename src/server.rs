@@ -1,6 +1,7 @@
 use bytes::{Bytes, BytesMut};
 use std::collections::HashMap;
 use std::env::args;
+use std::fs::File;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -10,8 +11,8 @@ use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
 
 use crate::{
-    Config, ConfigOperation, ConfigParam, Operation, RedisBuffer, RedisError, RedisState,
-    RespParser, SetOverwriteArgs,
+    Config, ConfigOperation, ConfigParam, Operation, RdbParser, RDBError, RedisBuffer, RedisError,
+    RedisState, RespParser, SetOverwriteArgs,
 };
 
 pub(crate) struct RedisServer {
@@ -31,6 +32,29 @@ impl RedisServer {
             )),
         }
     }
+
+    async fn load_rdb(db: Arc<RedisState>) -> Result<(), RedisError> {
+        let config_ro = db.config.read().await; // Get read lock
+        // let mut db_file = File::open(format!("{}/{}", config_ro.dir, config_ro.dbfilename)).map_err(|_| RedisError::RDB(RDBError::DbFileReadError))?;
+        let dir = config_ro.dir.as_ref().ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
+        let dbfilename = config_ro.dbfilename.as_ref().ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
+        let mut db_file = File::open(format!("{}/{}", dir.1, dbfilename.1))
+            .map_err(|_| RedisError::RDB(RDBError::DbFileReadError))?;
+
+        // let ops = RdbParser::decode(&mut db_file)?;
+        // Supports one DB: 00 only.
+        match RdbParser::decode(&mut db_file)?.dbs.get(&0) {
+            Some(selectdb) => {
+                for i in selectdb.keys.iter() {
+                    Self::_action(db.clone(), i.clone()).await?;
+                }
+            }
+            None => (),
+        }
+        Ok(())
+    }
+
+    
 
     async fn _action(db: Arc<RedisState>, word: Operation) -> Result<Operation, RedisError> {
         match word {
@@ -161,7 +185,7 @@ impl RedisServer {
                         Ok(Operation::Ok)
                     }
                 }
-            },
+            }
             Operation::Keys(key) => {
                 let db_ro = db.state.read().await; // Get read lock
                 let mut arr: Vec<Operation> = Vec::new();
@@ -170,7 +194,7 @@ impl RedisServer {
                         for k in db_ro.keys() {
                             arr.push(Operation::Echo(k.to_string()))
                         }
-                    },
+                    }
                     _ => {
                         if db_ro.contains_key(&key) {
                             arr.push(Operation::Echo(key))
@@ -178,7 +202,7 @@ impl RedisServer {
                     }
                 }
                 Ok(Operation::EchoArray(arr))
-            },
+            }
             Operation::Unknown => Err(RedisError::UnknownCommand),
             _ => Err(RedisError::UnknownCommand),
         }
@@ -200,7 +224,6 @@ impl RedisServer {
                     println!("TCP connection from {:?} closed", addr);
                     break;
                 }
-                println!("{:?}", &buff.buffer);
                 let mut resp = RespParser::new(buff);
 
                 match resp.decode() {
@@ -238,6 +261,9 @@ impl RedisServer {
             self.addr.to_string(),
             self.port
         );
+        if let Err(e) = Self::load_rdb(self.db.clone()).await {
+            println!("Failed to load RDB: {:?}", e);
+        }
         loop {
             let stream = listener.accept().await;
             match stream {
