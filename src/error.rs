@@ -1,6 +1,5 @@
 use lzf::LzfError;
 
-
 #[derive(Debug, PartialEq)]
 pub(crate) enum RedisError {
     ParsingError,
@@ -19,7 +18,7 @@ pub(crate) enum RedisError {
     RdbMissingMagicString,
     RdbInvalidVersion,
     RDB(RDBError),
-    InvalidUTF
+    InvalidUTF,
 }
 
 #[derive(Debug, PartialEq)]

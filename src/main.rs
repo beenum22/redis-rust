@@ -1,5 +1,6 @@
 #![allow(unused_imports)]
 use bytes::{Bytes, BytesMut};
+use clap::Parser;
 use core::str;
 use std::char::ToLowercase;
 use std::collections::{HashMap, HashSet};
@@ -7,7 +8,6 @@ use std::net::{IpAddr, SocketAddr};
 use std::usize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::RwLock;
-use clap::Parser;
 
 mod config;
 mod error;
