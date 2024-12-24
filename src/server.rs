@@ -33,9 +33,9 @@ impl RedisServer {
         }
     }
 
+    // TODO: Load only if the file exists
     async fn load_rdb(db: Arc<RedisState>) -> Result<(), RedisError> {
         let config_ro = db.config.read().await; // Get read lock
-        // let mut db_file = File::open(format!("{}/{}", config_ro.dir, config_ro.dbfilename)).map_err(|_| RedisError::RDB(RDBError::DbFileReadError))?;
         let dir = config_ro.dir.as_ref().ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
         let dbfilename = config_ro.dbfilename.as_ref().ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
         let mut db_file = File::open(format!("{}/{}", dir.1, dbfilename.1))
@@ -53,8 +53,6 @@ impl RedisServer {
         }
         Ok(())
     }
-
-    
 
     async fn _action(db: Arc<RedisState>, word: Operation) -> Result<Operation, RedisError> {
         match word {
@@ -102,6 +100,7 @@ impl RedisServer {
                 let db_ro = db.state.read().await; // Get read lock
                 match db_ro.get(&val) {
                     Some(value_map) => {
+                        println!("Debug SetMap {:?}", value_map);
                         match value_map.expiry_timestamp {
                             Some(expiry) => {
                                 let now = SystemTime::now();
