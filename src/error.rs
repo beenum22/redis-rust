@@ -34,6 +34,6 @@ pub(crate) enum RDBError {
     InvalidEncodingType,
     InvalidLengthEncoding,
     InvalidStringEncoding,
-    InvalidUtf8Encoding(Vec<u8>),
+    InvalidUtf8Encoding,
     LzfCompressionError(LzfError),
 }

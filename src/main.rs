@@ -14,12 +14,14 @@ mod error;
 mod resp;
 mod server;
 mod state;
+mod rdb;
 
 use config::{Config, ConfigOperation, ConfigParam};
 use error::{RedisError, RDBError};
 use resp::{Operation, RespParser, RespType};
 use server::RedisServer;
-use state::{RdbParser, RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
+use state::{RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
+use rdb::RdbParser;
 
 struct RedisBuffer {
     index: usize,
