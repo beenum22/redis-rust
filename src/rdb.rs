@@ -380,11 +380,15 @@ impl RdbParser {
                     }
                 }
                 Ok(RdbOpCode::EXPIRETIMEMS) => {
-                    let expiry = Self::decode_expiry_ms(reader)? as u128;
+                    let mut expiry = Self::decode_expiry_ms(reader)? as u128;
                     match select_db {
                         Some(db) => {
                             let mut key_val = Self::decode_key_value(reader, None)?;
                             key_val.expiry = Some(SetExpiryArgs::PXAT(expiry));
+                            // Temporary fix added to handle timestamps in nanoseconds.
+                            if expiry >= 1_000_000_000_000_000 {
+                                expiry = expiry / 1_000_000
+                            }
                             key_val.expiry_timestamp =
                                 Some(UNIX_EPOCH + Duration::from_millis(expiry as u64));
                             if let Some(db_entry) = parser.dbs.get_mut(&db) {
