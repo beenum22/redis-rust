@@ -386,7 +386,7 @@ impl RdbParser {
                             let mut key_val = Self::decode_key_value(reader, None)?;
                             key_val.expiry = Some(SetExpiryArgs::PXAT(expiry));
                             // Temporary fix added to handle timestamps in nanoseconds.
-                            if expiry >= 1_000_000_000_000_000 {
+                            if expiry >= 10_000_000_000_000_000 {
                                 expiry = expiry / 1_000_000
                             }
                             key_val.expiry_timestamp =
