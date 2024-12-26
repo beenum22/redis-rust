@@ -5,7 +5,7 @@ use std::{
     collections::HashMap,
     io::Read,
     str::FromStr,
-    time::{Duration, SystemTime},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use crate::{
@@ -298,7 +298,7 @@ impl Operation {
                                             )
                                         })?;
                                         set_args.expiry_timestamp =
-                                            Some(SystemTime::now() + Duration::from_secs(expiry));
+                                            Some(UNIX_EPOCH + Duration::from_secs(expiry));
                                         set_args.expiry = Some(SetExpiryArgs::EXAT(expiry))
                                     }
                                     _ => return Err(RedisError::InvalidValueType),
@@ -322,7 +322,7 @@ impl Operation {
                                             )
                                         })?;
                                         set_args.expiry_timestamp = Some(
-                                            SystemTime::now()
+                                            UNIX_EPOCH
                                                 + Duration::from_millis(expiry as u64),
                                         );
                                         set_args.expiry = Some(SetExpiryArgs::PXAT(expiry))

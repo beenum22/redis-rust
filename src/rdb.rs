@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::str;
-use std::time::{SystemTime, Duration};
+use std::time::{SystemTime, Duration, UNIX_EPOCH};
 
 use crate::{RDBError, RedisError, Config, Operation, SetMap, SetExpiryArgs};
 
@@ -371,7 +371,7 @@ impl RdbParser {
                             let mut key_val = Self::decode_key_value(reader, None)?;
                             key_val.expiry = Some(SetExpiryArgs::EXAT(expiry));
                             key_val.expiry_timestamp =
-                                Some(SystemTime::UNIX_EPOCH + Duration::from_secs(expiry));
+                                Some(UNIX_EPOCH + Duration::from_secs(expiry));
                             if let Some(db_entry) = parser.dbs.get_mut(&db) {
                                 db_entry.keys.push(Operation::Set(key_val));
                             }
@@ -386,7 +386,7 @@ impl RdbParser {
                             let mut key_val = Self::decode_key_value(reader, None)?;
                             key_val.expiry = Some(SetExpiryArgs::PXAT(expiry));
                             key_val.expiry_timestamp =
-                                Some(SystemTime::UNIX_EPOCH + Duration::from_millis(expiry as u64));
+                                Some(UNIX_EPOCH + Duration::from_millis(expiry as u64));
                             if let Some(db_entry) = parser.dbs.get_mut(&db) {
                                 db_entry.keys.push(Operation::Set(key_val));
                             }
