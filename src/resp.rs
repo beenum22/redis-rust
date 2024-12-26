@@ -325,13 +325,11 @@ impl Operation {
                                         // Temporary fix added to handle timestamps in nanoseconds.
                                         if expiry >= 10_000_000_000_000_000 {
                                             set_args.expiry_timestamp = Some(
-                                                UNIX_EPOCH
-                                                    + Duration::from_nanos(expiry as u64),
+                                                UNIX_EPOCH + Duration::from_nanos(expiry as u64),
                                             );
                                         } else {
                                             set_args.expiry_timestamp = Some(
-                                                UNIX_EPOCH
-                                                    + Duration::from_millis(expiry as u64),
+                                                UNIX_EPOCH + Duration::from_millis(expiry as u64),
                                             );
                                         }
                                     }

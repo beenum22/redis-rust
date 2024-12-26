@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::str;
-use std::time::{SystemTime, Duration, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::{RDBError, RedisError, Config, Operation, SetMap, SetExpiryArgs};
+use crate::{Config, Operation, RDBError, RedisError, SetExpiryArgs, SetMap};
 
 const RDB_MAGIC: &[u8] = b"REDIS";
 const RDB_MIN_VERSION: u32 = 10;
@@ -132,10 +132,12 @@ impl RdbParser {
                     .parse()
                     .map_err(|_| RedisError::RDB(RDBError::InvalidVersion))?;
                 if version < RDB_MIN_VERSION || version > RDB_MAX_VERSION {
-                    return Err(RedisError::RDB(RDBError::UnsupportedVersion(version.to_string())));
+                    return Err(RedisError::RDB(RDBError::UnsupportedVersion(
+                        version.to_string(),
+                    )));
                 }
                 Ok(version.to_string())
-            },
+            }
             _ => return Err(RedisError::RDB(RDBError::MissingBytes)),
         }
     }
@@ -194,9 +196,8 @@ impl RdbParser {
                 let mut len_buf = vec![0u8; l as usize];
                 match Self::_reader_helper(reader, &mut len_buf) {
                     Ok(_) => Ok(RdbStringEncoding::Length(
-                        String::from_utf8(len_buf).map_err(|err| {
-                            RedisError::RDB(RDBError::InvalidUtf8Encoding)
-                        })?,
+                        String::from_utf8(len_buf)
+                            .map_err(|err| RedisError::RDB(RDBError::InvalidUtf8Encoding))?,
                     )),
                     Err(_) => Err(RedisError::RDB(RDBError::MissingBytes)),
                 }
@@ -401,7 +402,7 @@ impl RdbParser {
                 Ok(RdbOpCode::RESIZEDB) => {
                     // Info not used anywhere
                     Self::decode_resizedb(reader)?;
-                },
+                }
                 Ok(RdbOpCode::AUX) => parser.aux_keys.push(Self::decode_aux_field(reader)?),
                 Ok(RdbOpCode::Unknown(val)) => match select_db {
                     Some(db) => {
@@ -421,10 +422,10 @@ impl RdbParser {
 
 #[cfg(test)]
 mod rdb_parser {
-    use super::{RdbParser, RdbOpCode, RdbLengthEncoding, RdbStringEncoding, RdbStringInteger, RdbAuxField};
-    use crate::{
-        RDBError, RedisError, Config, Operation, SetMap, SetExpiryArgs
+    use super::{
+        RdbAuxField, RdbLengthEncoding, RdbOpCode, RdbParser, RdbStringEncoding, RdbStringInteger,
     };
+    use crate::{Config, Operation, RDBError, RedisError, SetExpiryArgs, SetMap};
     // use crate::{
     //     resp::Operation,
     //     state::{
@@ -435,7 +436,6 @@ mod rdb_parser {
     use hex;
     use std::io::Cursor;
     use std::time::{Duration, SystemTime};
-    
 
     #[test]
     fn test_parse_opcode() {

@@ -11,7 +11,7 @@ use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
 
 use crate::{
-    Config, ConfigOperation, ConfigParam, Operation, RdbParser, RDBError, RedisBuffer, RedisError,
+    Config, ConfigOperation, ConfigParam, Operation, RDBError, RdbParser, RedisBuffer, RedisError,
     RedisState, RespParser, SetOverwriteArgs,
 };
 
@@ -36,8 +36,14 @@ impl RedisServer {
     // TODO: Load only if the file exists
     async fn load_rdb(db: Arc<RedisState>) -> Result<(), RedisError> {
         let config_ro = db.config.read().await; // Get read lock
-        let dir = config_ro.dir.as_ref().ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
-        let dbfilename = config_ro.dbfilename.as_ref().ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
+        let dir = config_ro
+            .dir
+            .as_ref()
+            .ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
+        let dbfilename = config_ro
+            .dbfilename
+            .as_ref()
+            .ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
         let mut db_file = File::open(format!("{}/{}", dir.1, dbfilename.1))
             .map_err(|_| RedisError::RDB(RDBError::DbFileReadError))?;
 
