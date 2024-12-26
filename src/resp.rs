@@ -315,17 +315,21 @@ impl Operation {
                             match expiry {
                                 Some(val) => match val {
                                     RespType::BulkString(arg_val) => {
-                                        let expiry: u128 = arg_val.parse().map_err(|err| {
+                                        let mut expiry: u128 = arg_val.parse().map_err(|err| {
                                             RedisError::InvalidArgValue(
                                                 "value is not an integer or out of range"
                                                     .to_string(),
                                             )
                                         })?;
+                                        set_args.expiry = Some(SetExpiryArgs::PXAT(expiry));
+                                        // Temporary fix added to handle timestamps in nanoseconds.
+                                        if expiry >= 1_000_000_000_000_000 {
+                                            expiry = expiry / 1_000_000
+                                        }
                                         set_args.expiry_timestamp = Some(
                                             UNIX_EPOCH
                                                 + Duration::from_millis(expiry as u64),
                                         );
-                                        set_args.expiry = Some(SetExpiryArgs::PXAT(expiry))
                                     }
                                     _ => return Err(RedisError::InvalidValueType),
                                 },
