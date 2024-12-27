@@ -2,6 +2,7 @@
 use bytes::{Bytes, BytesMut};
 use clap::Parser;
 use core::str;
+use log::{info, log_enabled, Level, LevelFilter};
 use std::char::ToLowercase;
 use std::collections::{HashMap, HashSet};
 use std::net::{IpAddr, SocketAddr};
@@ -44,9 +45,26 @@ struct Cli {
     dbfilename: String,
 }
 
+fn setup_logger() -> Result<(), fern::InitError> {
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{}] {}",
+                record.level(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .chain(std::io::stdout())
+        .chain(fern::log_file("output.log")?)
+        .apply()?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     let args = Cli::parse();
+    setup_logger().unwrap();
 
     let redis_server = RedisServer::new(args.host.as_str(), args.port, args.dir, args.dbfilename);
     redis_server.run().await

@@ -9,6 +9,7 @@ use std::time::SystemTime;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
+use log::{info, warn, error, debug};
 
 use crate::{
     Config, ConfigOperation, ConfigParam, Operation, RDBError, RdbParser, RedisBuffer, RedisError,
@@ -94,7 +95,8 @@ impl RedisServer {
             Operation::Get(val) => {
                 match RedisState::get_key(db.state.clone(), &val).await? {
                     Some(value_map) => {
-                        println!("Debug SetMap {:?}", value_map);
+                        // println!("Debug SetMap {:?}", value_map);
+                        debug!("Debug SetMap {:?}", value_map);
                         match value_map.expiry_timestamp {
                             Some(expiry) => {
                                 let now = SystemTime::now();
@@ -202,7 +204,8 @@ impl RedisServer {
     }
 
     async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<RedisState>) -> () {
-        println!("New TCP connection from {:?}", addr);
+        // println!("New TCP connection from {:?}", addr);
+        debug!("New TCP connection from {:?}", addr);
         tokio::spawn(async move {
             let mut raw_buff: [u8; 512] = [0; 512];
             loop {
@@ -214,7 +217,8 @@ impl RedisServer {
                 buff.buffer = Bytes::copy_from_slice(&raw_buff[..data]);
 
                 if data == 0 {
-                    println!("TCP connection from {:?} closed", addr);
+                    // println!("TCP connection from {:?} closed", addr);
+                    debug!("TCP connection from {:?} closed", addr);
                     break;
                 }
                 let mut resp = RespParser::new(buff);
@@ -249,20 +253,22 @@ impl RedisServer {
         let listener = TcpListener::bind(format!("{}:{}", self.addr.to_string(), self.port))
             .await
             .unwrap();
-        println!(
+        info!(
             "Redis Server is running on {}:{}",
             self.addr.to_string(),
             self.port
         );
         if let Err(e) = Self::load_rdb(self.db.clone()).await {
-            println!("Failed to load RDB: {:?}", e);
+            // println!("Failed to load RDB: {:?}", e);
+            warn!("Failed to load RDB: {:?}", e);
         }
         loop {
             let stream = listener.accept().await;
             match stream {
                 Ok((stream, addr)) => Self::stream_handler(stream, addr, self.db.clone()).await,
                 Err(e) => {
-                    println!("error: {}", e);
+                    // println!("error: {}", e);
+                    error!("error: {}", e);
                 }
             }
         }

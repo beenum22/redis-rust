@@ -433,7 +433,6 @@ mod rdb_parser {
     //         RdbStringInteger, RedisError, SetExpiryArgs, SetMap,
     //     },
     // };
-    use hex;
     use std::io::Cursor;
     use std::time::{Duration, SystemTime};
 
