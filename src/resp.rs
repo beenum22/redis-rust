@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs,
+    config::ConfigPair, ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
 };
 
 #[derive(Debug)]
@@ -404,13 +404,20 @@ impl Operation {
                 RespType::BulkString(key_str) => match key_str.to_lowercase().as_str() {
                     "dir" => ConfigParam::Dir(match &pair[1] {
                         RespType::BulkString(val_str) => {
-                            Some((key_str.to_string(), val_str.to_string()))
+                            // Some((key_str.to_string(), val_str.to_string()))
+                            Some(ConfigPair {
+                                key: key_str.to_string(),
+                                value: val_str.to_string(),
+                            })
                         }
                         _ => return Err(RedisError::InvalidValueType),
                     }),
                     "dbfilename" => ConfigParam::DbFileName(match &pair[1] {
                         RespType::BulkString(val_str) => {
-                            Some((key_str.to_string(), val_str.to_string()))
+                            Some(ConfigPair {
+                                key: key_str.to_string(),
+                                value: val_str.to_string(),
+                            })
                         }
                         _ => return Err(RedisError::InvalidValueType),
                     }),

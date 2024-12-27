@@ -18,6 +18,7 @@ pub(crate) enum RedisError {
     RdbMissingMagicString,
     RdbInvalidVersion,
     RDB(RDBError),
+    State(StateError),
     InvalidUTF,
 }
 
@@ -36,4 +37,11 @@ pub(crate) enum RDBError {
     InvalidStringEncoding,
     InvalidUtf8Encoding,
     LzfCompressionError(LzfError),
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum StateError {
+    UnknownConfig,
+    UnknownKey,
+    LockError,
 }

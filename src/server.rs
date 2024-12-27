@@ -26,37 +26,26 @@ impl RedisServer {
         Self {
             addr: IpAddr::from_str(addr).unwrap(),
             port: port,
-            db: Arc::new(RedisState::new(
-                RwLock::new(HashMap::new()),
-                RwLock::new(Config::new(dir, dbfilename)),
-            )),
+            db: Arc::new(RedisState::new(dir, dbfilename)),
         }
     }
 
     // TODO: Load only if the file exists
     async fn load_rdb(db: Arc<RedisState>) -> Result<(), RedisError> {
-        let config_ro = db.config.read().await; // Get read lock
-        let dir = config_ro
-            .dir
-            .as_ref()
-            .ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
-        let dbfilename = config_ro
-            .dbfilename
-            .as_ref()
-            .ok_or(RedisError::RDB(RDBError::DbFileReadError))?;
-        let mut db_file = File::open(format!("{}/{}", dir.1, dbfilename.1))
+        let dir = RedisState::get_config_dir(db.config.clone()).await?.value;
+        let dbfilename = RedisState::get_config_dbfilename(db.config.clone())
+            .await?
+            .value;
+        let mut db_file = File::open(format!("{}/{}", dir, dbfilename))
             .map_err(|_| RedisError::RDB(RDBError::DbFileReadError))?;
-
-        // let ops = RdbParser::decode(&mut db_file)?;
-        // Supports one DB: 00 only.
-        match RdbParser::decode(&mut db_file)?.dbs.get(&0) {
+        match RdbParser::decode(&mut db_file)?.dbs.get(&0) {  
             Some(selectdb) => {
                 for i in selectdb.keys.iter() {
                     Self::_action(db.clone(), i.clone()).await?;
                 }
             }
             None => (),
-        }
+        };
         Ok(())
     }
 
@@ -64,47 +53,46 @@ impl RedisServer {
         match word {
             Operation::Ping => Ok(Operation::Echo("PONG".to_string())),
             Operation::Echo(_) => Ok(word),
-            Operation::Set(set_args) => {
-                match &set_args.overwrite {
-                    Some(val) => {
-                        let db_ro = db.state.read().await; // Get read lock;
-                        let key_state = db_ro.get(&set_args.key);
-                        match val {
-                            SetOverwriteArgs::NX => {
-                                if key_state.is_none() {
-                                    drop(db_ro);
-                                    let mut db_rw = db.state.write().await; // Get write lock
-                                    db_rw.insert(set_args.key.clone(), set_args);
-                                    drop(db_rw);
-                                    Ok(Operation::Ok)
-                                } else {
-                                    Ok(Operation::Nil)
-                                }
+            Operation::Set(set_args) => match &set_args.overwrite {
+                Some(val) => {
+                    let key_state =
+                        RedisState::get_key(db.state.clone(), &set_args.key).await?;
+                    match val {
+                        SetOverwriteArgs::NX => {
+                            if key_state.is_none() {
+                                RedisState::set_key(
+                                    db.state.clone(),
+                                    set_args.key.clone(),
+                                    set_args,
+                                )
+                                .await?;
+                                Ok(Operation::Ok)
+                            } else {
+                                Ok(Operation::Nil)
                             }
-                            SetOverwriteArgs::XX => {
-                                if key_state.is_some() {
-                                    drop(db_ro);
-                                    let mut db_rw = db.state.write().await; // Get write lock
-                                    db_rw.insert(set_args.key.clone(), set_args);
-                                    drop(db_rw);
-                                    Ok(Operation::Ok)
-                                } else {
-                                    Ok(Operation::Nil)
-                                }
+                        }
+                        SetOverwriteArgs::XX => {
+                            if key_state.is_some() {
+                                RedisState::set_key(
+                                    db.state.clone(),
+                                    set_args.key.clone(),
+                                    set_args,
+                                )
+                                .await?;
+                                Ok(Operation::Ok)
+                            } else {
+                                Ok(Operation::Nil)
                             }
                         }
                     }
-                    None => {
-                        let mut db_rw = db.state.write().await; // Get write lock
-                        db_rw.insert(set_args.key.clone(), set_args);
-                        drop(db_rw);
-                        Ok(Operation::Ok)
-                    }
                 }
-            }
+                None => {
+                    RedisState::set_key(db.state.clone(), set_args.key.clone(), set_args).await?;
+                    Ok(Operation::Ok)
+                }
+            },
             Operation::Get(val) => {
-                let db_ro = db.state.read().await; // Get read lock
-                match db_ro.get(&val) {
+                match RedisState::get_key(db.state.clone(), &val).await? {
                     Some(value_map) => {
                         println!("Debug SetMap {:?}", value_map);
                         match value_map.expiry_timestamp {
@@ -113,10 +101,8 @@ impl RedisServer {
                                 match now > expiry {
                                     false => Ok(Operation::Echo(value_map.val.clone())),
                                     true => {
-                                        drop(db_ro);
-                                        let mut db_rw = db.state.write().await; // Get write lock
-                                        db_rw.remove(&val);
-                                        drop(db_rw);
+                                        RedisState::get_key(db.state.clone(), &val)
+                                            .await?;
                                         Ok(Operation::Nil)
                                     }
                                 }
@@ -139,27 +125,26 @@ impl RedisServer {
                                 ConfigOperation::Get(config_param) => {
                                     match config_param {
                                         ConfigParam::Dir(_) => {
-                                            let config_ro = db.config.read().await; // Get read lock
-                                            match &config_ro.dir {
-                                                Some(value) => {
+                                            match RedisState::get_config_dir(db.config.clone()).await {
+                                                Ok(value) => {
                                                     config_arr
-                                                        .push(Operation::Echo(value.0.to_string()));
+                                                        .push(Operation::Echo(value.key.to_string()));
                                                     config_arr
-                                                        .push(Operation::Echo(value.1.to_string()));
+                                                        .push(Operation::Echo(value.value.to_string()));
                                                 }
-                                                None => (),
+                                                Err(_) => (),
+                                                
                                             }
                                         }
                                         ConfigParam::DbFileName(_) => {
-                                            let config_ro = db.config.read().await; // Get read lock
-                                            match &config_ro.dbfilename {
-                                                Some(value) => {
+                                            match RedisState::get_config_dbfilename(db.config.clone()).await {
+                                                Ok(value) => {
                                                     config_arr
-                                                        .push(Operation::Echo(value.0.to_string()));
+                                                        .push(Operation::Echo(value.key.to_string()));
                                                     config_arr
-                                                        .push(Operation::Echo(value.1.to_string()));
+                                                        .push(Operation::Echo(value.value.to_string()));
                                                 }
-                                                None => (),
+                                                Err(_) => (),
                                             }
                                         }
                                         _ => (),
@@ -175,12 +160,16 @@ impl RedisServer {
                             match &val_arr[i] {
                                 ConfigOperation::Set(config_param) => match config_param {
                                     ConfigParam::Dir(val) => {
-                                        let mut config_rw = db.config.write().await; // Get write lock
-                                        config_rw.dir = val.clone();
+                                        RedisState::set_config_dir(
+                                            db.config.clone(),
+                                            val.clone().unwrap().value.clone(),
+                                        ).await?;
                                     }
                                     ConfigParam::DbFileName(val) => {
-                                        let mut config_rw = db.config.write().await; // Get write lock
-                                        config_rw.dbfilename = val.clone();
+                                        RedisState::set_config_dbfilename(
+                                            db.config.clone(),
+                                            val.clone().unwrap().value.clone(),
+                                        ).await?;
                                     }
                                     _ => (),
                                 },
@@ -192,16 +181,15 @@ impl RedisServer {
                 }
             }
             Operation::Keys(key) => {
-                let db_ro = db.state.read().await; // Get read lock
                 let mut arr: Vec<Operation> = Vec::new();
                 match key.as_str() {
                     "*" => {
-                        for k in db_ro.keys() {
-                            arr.push(Operation::Echo(k.to_string()))
+                        for k in RedisState::get_all_keys(db.state.clone()).await? {
+                            arr.push(Operation::Echo(k))
                         }
                     }
                     _ => {
-                        if db_ro.contains_key(&key) {
+                        if RedisState::has_key(db.state.clone(), &key).await? {
                             arr.push(Operation::Echo(key))
                         }
                     }
@@ -213,7 +201,7 @@ impl RedisServer {
         }
     }
 
-    async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<RedisState>) {
+    async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<RedisState>) -> () {
         println!("New TCP connection from {:?}", addr);
         tokio::spawn(async move {
             let mut raw_buff: [u8; 512] = [0; 512];
