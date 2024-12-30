@@ -17,18 +17,52 @@ use crate::{
     RedisState, RespParser, SetOverwriteArgs, InfoOperation
 };
 
+enum Host {
+    Ip(IpAddr),
+    Domain(String)
+}
+
+pub(crate) struct RedisSocket {
+    host: Host,
+    port: u16
+}
+
 pub(crate) struct RedisServer {
     addr: IpAddr,
     port: u16,
     db: Arc<RedisState>,
+    replica_of: Option<RedisSocket> 
 }
 
 impl RedisServer {
-    pub(crate) fn new(addr: &str, port: u16, dir: String, dbfilename: String) -> Self {
+    pub(crate) fn new(addr: &str, port: u16, dir: String, dbfilename: String, replica_of: Option<String>) -> Self {
+        let remote_server: Option<RedisSocket> = match replica_of {
+            Some(replica) => {
+                let parts: Vec<&str> = replica.split_whitespace().collect();
+                let (host_str, port_str) = (parts[0], parts[1]);
+                let replica_port = port_str.parse::<u16>().expect("Invalid port number");
+                let replica_host = if let Ok(ip) = IpAddr::from_str(host_str) {
+                    Host::Ip(ip)
+                } else {
+                    Host::Domain(replica)
+                };
+                Some(RedisSocket {
+                    host: replica_host,
+                    port: replica_port,
+                })
+            }
+            None => None
+        };
+        let role: String = match remote_server {
+            Some(_) => "slave".to_string(),
+            None => "master".to_string()
+        };
+
         Self {
             addr: IpAddr::from_str(addr).unwrap(),
             port: port,
-            db: Arc::new(RedisState::new(dir, dbfilename)),
+            db: Arc::new(RedisState::new(dir, dbfilename, role)),
+            replica_of: remote_server,
         }
     }
 

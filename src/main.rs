@@ -45,6 +45,9 @@ struct Cli {
 
     #[arg(long, default_value = "dump.rdb")]
     dbfilename: String,
+
+    #[arg(long)]
+    replicaof: Option<String>,
 }
 
 fn setup_logger() -> Result<(), fern::InitError> {
@@ -68,6 +71,6 @@ async fn main() {
     let args = Cli::parse();
     setup_logger().unwrap();
 
-    let redis_server = RedisServer::new(args.host.as_str(), args.port, args.dir, args.dbfilename);
+    let redis_server = RedisServer::new(args.host.as_str(), args.port, args.dir, args.dbfilename, args.replicaof);
     redis_server.run().await
 }

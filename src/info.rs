@@ -4,9 +4,9 @@ pub(crate) struct ReplicationInfo {
 }
 
 impl ReplicationInfo {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(role: String) -> Self {
         ReplicationInfo {
-            role: "master".to_string()
+            role
         }
     }
 
@@ -14,7 +14,6 @@ impl ReplicationInfo {
         vec![
             "# Replication".to_string(),
             format!("role:{}\n", info.role),
-            "\n".to_string(),
         ]
     }
     
@@ -36,7 +35,6 @@ impl ServerInfo {
         vec![
             "# Server".to_string(),
             format!("redis_version:{}\n", info.redis_version),
-            "\n".to_string(),
         ]
     }
 }
@@ -54,9 +52,9 @@ pub(crate) struct Info {
 }
 
 impl Info {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(role: String) -> Self {
         Self {
-            replication: ReplicationInfo::new(),
+            replication: ReplicationInfo::new(role),
             server: ServerInfo::new()
         }
     }

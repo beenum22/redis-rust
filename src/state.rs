@@ -25,11 +25,11 @@ pub(crate) struct RedisState {
 }
 
 impl RedisState {
-    pub(crate) fn new(dir: String, dbfilename: String) -> Self {
+    pub(crate) fn new(dir: String, dbfilename: String, role: String) -> Self {
         Self {
             state: Arc::new(RwLock::new(HashMap::new())),
             config: Arc::new(RwLock::new(Config::new(dir, dbfilename))),
-            info: Arc::new(RwLock::new(Info::new())),
+            info: Arc::new(RwLock::new(Info::new(role))),
         }
     }
 
@@ -152,7 +152,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_new() {
-        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         let config_ro = redis_state.config.read().await;
         let state_ro = redis_state.state.read().await;
         assert_eq!(config_ro.dir.as_ref().unwrap().value, "/data".to_string());
@@ -165,7 +165,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_config_dir() {
-        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         assert_eq!(
             RedisState::get_config_dir(redis_state.config.clone())
                 .await
@@ -177,7 +177,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_config_dbfilename() {
-        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         assert_eq!(
             RedisState::get_config_dbfilename(redis_state.config.clone())
                 .await
@@ -189,7 +189,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_set_config_dir() {
-        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         RedisState::set_config_dir(redis_state.config.clone(), "/tmp".to_string())
             .await
             .unwrap();
@@ -201,7 +201,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_set_config_dbfilename() {
-        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         RedisState::set_config_dbfilename(redis_state.config.clone(), "dump2.rdb".to_string())
             .await
             .unwrap();
@@ -213,7 +213,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_info() {
-        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         let server = ServerInfo {
             redis_version: "100.100.100".to_string(),
         };
@@ -228,7 +228,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_key() {
-        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         let set_map = SetMap {
             expiry: None,
             key: "key".to_string(),
@@ -248,7 +248,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_set_key() {
-        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         let set_map = SetMap {
             expiry: None,
             key: "key".to_string(),
@@ -272,7 +272,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_unset_key() {
-        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         let set_map = SetMap {
             expiry: None,
             key: "key".to_string(),
@@ -293,7 +293,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_has_key() {
-        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         let set_map = SetMap {
             expiry: None,
             key: "key".to_string(),
@@ -323,7 +323,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_keys() {
-        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let mut redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string(), "master".to_string());
         let set_map = SetMap {
             expiry: None,
             key: "foo".to_string(),
