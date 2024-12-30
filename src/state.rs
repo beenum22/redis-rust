@@ -1,4 +1,6 @@
+// TODO: Avoid using cloning. For example: state.info.
 use lzf;
+use std::borrow::Borrow;
 use std::fs::{read, File};
 use std::io::{BufReader, Read};
 use std::str;
@@ -7,9 +9,10 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime},
 };
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard};
 
 use crate::config::ConfigPair;
+use crate::info::{Info, ServerInfo};
 use crate::{
     error::RDBError, error::RedisError, error::StateError, resp::Operation, Config, ConfigParam,
 };
@@ -18,14 +21,15 @@ use crate::{
 pub(crate) struct RedisState {
     pub(crate) state: Arc<RwLock<HashMap<String, SetMap>>>,
     pub(crate) config: Arc<RwLock<Config>>,
+    pub(crate) info: Arc<RwLock<Info>>,
 }
 
 impl RedisState {
     pub(crate) fn new(dir: String, dbfilename: String) -> Self {
-        // Self { state, config }
         Self {
             state: Arc::new(RwLock::new(HashMap::new())),
             config: Arc::new(RwLock::new(Config::new(dir, dbfilename))),
+            info: Arc::new(RwLock::new(Info::new())),
         }
     }
 
@@ -62,6 +66,11 @@ impl RedisState {
             value: dbfilename,
         });
         Ok(())
+    }
+
+    pub async fn get_info<'a>(info: Arc<RwLock<Info>>) -> Result<Info, RedisError> {
+        let info_ro = info.read().await;
+        Ok(info_ro.clone())
     }
 
     pub(crate) async fn get_key(
@@ -200,6 +209,21 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(dbfilename.value, "dump2.rdb".to_string());
+    }
+
+    #[tokio::test]
+    async fn test_get_info() {
+        let redis_state = RedisState::new("/data".to_string(), "dump.rdb".to_string());
+        let server = ServerInfo {
+            redis_version: "100.100.100".to_string(),
+        };
+        let mut info_w = redis_state.info.write().await;
+        info_w.server = server.clone();
+        drop(info_w);
+        let server_info = RedisState::get_info(redis_state.info.clone())
+            .await
+            .unwrap();
+        assert_eq!(server_info, server_info);
     }
 
     #[tokio::test]

@@ -11,9 +11,10 @@ use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
 use log::{info, warn, error, debug};
 
+use crate::info::{ReplicationInfo, ServerInfo};
 use crate::{
     Config, ConfigOperation, ConfigParam, Operation, RDBError, RdbParser, RedisBuffer, RedisError,
-    RedisState, RespParser, SetOverwriteArgs,
+    RedisState, RespParser, SetOverwriteArgs, InfoOperation
 };
 
 pub(crate) struct RedisServer {
@@ -198,6 +199,22 @@ impl RedisServer {
                 }
                 Ok(Operation::EchoArray(arr))
             }
+            Operation::Info(val) => {
+                let mut arr: Vec<String> = Vec::new();
+                let info: crate::info::Info = RedisState::get_info(db.info.clone()).await?;
+                for i in 0..val.len() {
+                    match &val[i] {
+                        InfoOperation::Replication => {
+                            arr.push(ReplicationInfo::get_all(info.replication.clone()).join("\n"))
+                        }
+                        InfoOperation::Server => {
+                            arr.push(ServerInfo::get_all(info.server.clone()).join("\n"))
+                        },
+                    }
+                }
+                Ok(Operation::Echo(arr.join("\n")))
+            }
+            Operation::Nil => Ok(Operation::Nil),
             Operation::Unknown => Err(RedisError::UnknownCommand),
             _ => Err(RedisError::UnknownCommand),
         }
@@ -221,6 +238,7 @@ impl RedisServer {
                     debug!("TCP connection from {:?} closed", addr);
                     break;
                 }
+                debug!("Received: {:?}", buff.buffer);
                 let mut resp = RespParser::new(buff);
 
                 match resp.decode() {

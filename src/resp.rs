@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    config::ConfigPair, ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
+    config::ConfigPair, info::InfoOperation, ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
 };
 
 #[derive(Debug)]
@@ -200,6 +200,7 @@ pub(crate) enum Operation {
     Ok,
     Nil,
     EchoArray(Vec<Operation>),
+    Info(Vec<InfoOperation>),
     Error(String),
     Unknown,
 }
@@ -455,6 +456,24 @@ impl Operation {
         }
     }
 
+    fn decode_info(args: &[RespType]) -> Result<Vec<InfoOperation>, RedisError> {
+        if args.len() == 0 {
+            return Err(RedisError::MissingArgs);
+        }
+        let mut arr: Vec<InfoOperation> = Vec::new();
+        for i in 0..args.len() {
+            match &args[i] {
+                RespType::BulkString(val_str) => match val_str.to_lowercase().as_str() {
+                    "replication" => arr.push(InfoOperation::Replication),
+                    "server" => arr.push(InfoOperation::Server),
+                    _ => (),
+                },
+                _ => return Err(RedisError::InvalidValueType),
+            }
+        }
+        Ok(arr)
+    }
+
     fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
         match word {
             RespType::String(res) => Err(RedisError::UnknownCommand),
@@ -475,6 +494,7 @@ impl Operation {
                     "get" => Ok(Self::Get(Self::_decode_get(&res[1..])?)),
                     "config" => Ok(Self::Config(Self::_decode_config(&res[1..])?)),
                     "keys" => Ok(Self::Keys(Self::_decode_keys(&res[1..])?)),
+                    "info" => Ok(Self::Info(Self::decode_info(&res[1..])?)),
                     _ => Err(RedisError::UnknownCommand),
                 },
                 _ => Err(RedisError::UnknownCommand),
@@ -518,6 +538,7 @@ impl RespParser {
     pub(crate) fn encode(&mut self, word: Operation) -> Result<Bytes, RedisError> {
         let word_type = Operation::encode(word)?;
         let encoded_bytes = RespType::encode(word_type)?;
+        println!("{:?}", encoded_bytes);
         Ok(encoded_bytes)
     }
 }

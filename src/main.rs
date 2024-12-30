@@ -16,6 +16,7 @@ mod rdb;
 mod resp;
 mod server;
 mod state;
+mod info;
 
 use config::{Config, ConfigOperation, ConfigParam};
 use error::{RDBError, RedisError};
@@ -23,6 +24,7 @@ use rdb::RdbParser;
 use resp::{Operation, RespParser, RespType};
 use server::RedisServer;
 use state::{RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
+use info::{Info, ReplicationInfo, InfoOperation};
 
 struct RedisBuffer {
     index: usize,
