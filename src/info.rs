@@ -1,19 +1,26 @@
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ReplicationInfo {
     role: String,
+    master_replid: String,
+    master_repl_offset: u16,
 }
 
 impl ReplicationInfo {
     pub(crate) fn new(role: String) -> Self {
         ReplicationInfo {
-            role
+            role,
+            master_replid: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb".to_string(),
+            master_repl_offset: 0,
         }
     }
 
     pub(crate) fn get_all(info: Self) -> Vec<String> {
         vec![
             "# Replication".to_string(),
-            format!("role:{}\n", info.role),
+            format!("role:{}", info.role),
+            format!("master_replid:{}", info.master_replid),
+            format!("master_repl_offset:{}", info.master_repl_offset),
+            "\n".to_string(),
         ]
     }
     
@@ -34,7 +41,8 @@ impl ServerInfo {
     pub(crate) fn get_all(info: Self) -> Vec<String> {
         vec![
             "# Server".to_string(),
-            format!("redis_version:{}\n", info.redis_version),
+            format!("redis_version:{}", info.redis_version),
+            "\n".to_string(),
         ]
     }
 }
