@@ -2,68 +2,89 @@ use bytes::{Bytes, BytesMut};
 use std::collections::HashMap;
 use std::env::args;
 use std::fs::File;
-use std::net::{IpAddr, SocketAddr};
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::SystemTime;
+use std::vec;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
 use log::{info, warn, error, debug};
 
+use crate::error::ConnectionError;
 use crate::info::{ReplicationInfo, ServerInfo};
 use crate::{
     Config, ConfigOperation, ConfigParam, Operation, RDBError, RdbParser, RedisBuffer, RedisError,
     RedisState, RespParser, SetOverwriteArgs, InfoOperation
 };
 
-enum Host {
-    Ip(IpAddr),
-    Domain(String)
-}
-
-pub(crate) struct RedisSocket {
-    host: Host,
-    port: u16
-}
-
 pub(crate) struct RedisServer {
     addr: IpAddr,
     port: u16,
     db: Arc<RedisState>,
-    replica_of: Option<RedisSocket> 
+    replica_of: Option<SocketAddr> 
 }
 
 impl RedisServer {
     pub(crate) fn new(addr: &str, port: u16, dir: String, dbfilename: String, replica_of: Option<String>) -> Self {
-        let remote_server: Option<RedisSocket> = match replica_of {
+        let remote_server: Option<SocketAddr> = match replica_of {
             Some(replica) => {
                 let parts: Vec<&str> = replica.split_whitespace().collect();
                 let (host_str, port_str) = (parts[0], parts[1]);
                 let replica_port = port_str.parse::<u16>().expect("Invalid port number");
-                let replica_host = if let Ok(ip) = IpAddr::from_str(host_str) {
-                    Host::Ip(ip)
-                } else {
-                    Host::Domain(replica)
-                };
-                Some(RedisSocket {
-                    host: replica_host,
-                    port: replica_port,
-                })
+                let replica_host = IpAddr::from_str(host_str).unwrap();  // TODO: Handle errors
+                Some(SocketAddr::new(replica_host, replica_port))
             }
             None => None
         };
+
         let role: String = match remote_server {
             Some(_) => "slave".to_string(),
             None => "master".to_string()
         };
 
         Self {
-            addr: IpAddr::from_str(addr).unwrap(),
+            addr: IpAddr::from_str(addr).unwrap(),  // TODO: Handle errors
             port: port,
             db: Arc::new(RedisState::new(dir, dbfilename, role)),
             replica_of: remote_server,
         }
+    }
+
+    async fn configure_replica(server: SocketAddr) -> Result<(), RedisError>{
+        let mut stream = TcpStream::connect(
+            format!("{}:{}",
+            server.ip(),
+            server.port())
+        ).await.map_err(|_| RedisError::Connection(ConnectionError::FailedToWriteBytes))?;
+        info!("Connected as replica to {}", server);
+        let mut buff = RedisBuffer {
+            buffer: Bytes::new(),
+            index: 0,
+        };
+        let ping = RespParser::encode(Operation::EchoArray(
+            vec![Operation::Echo("PING".to_string())]
+        ))?;
+        stream.write_all(ping.as_ref()).await.map_err(|_| RedisError::Connection(ConnectionError::FailedToWriteBytes))?;
+        let mut raw_buff: [u8; 512] = [0; 512];
+        let data = stream.read(&mut raw_buff).await.unwrap();
+        buff.buffer = Bytes::copy_from_slice(&raw_buff[..data]);
+        match RespParser::decode(&mut buff) {
+            Ok(res) => match res {
+                Operation::Ok => debug!("Replica Ping response successful"),
+                Operation::Error(err) => error!("Replica Ping response failed. {}", err),
+                _ => {
+                    error!("Replica Ping response failed");
+                    return Err(RedisError::UnknownCommand)
+                }
+            },
+            Err(err) => {
+                info!("Ping Resp parsing failed. {:?}", err);
+                return Err(RedisError::UnknownCommand)
+            }
+        }
+        Ok(())
     }
 
     // TODO: Load only if the file exists
@@ -273,12 +294,11 @@ impl RedisServer {
                     break;
                 }
                 debug!("Received: {:?}", buff.buffer);
-                let mut resp = RespParser::new(buff);
 
-                match resp.decode() {
+                match RespParser::decode(&mut buff) {
                     Ok(decoded_word) => {
                         match Self::_action(db.clone(), decoded_word).await {
-                            Ok(action_word) => match resp.encode(action_word) {
+                            Ok(action_word) => match RespParser::encode(action_word) {
                                 Ok(reply) => stream.write_all(reply.as_ref()).await.unwrap(),
                                 Err(err) => stream
                                     .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
@@ -314,6 +334,10 @@ impl RedisServer {
             // println!("Failed to load RDB: {:?}", e);
             warn!("Failed to load RDB: {:?}", e);
         }
+        if self.replica_of.is_some() {
+            Self::configure_replica(self.replica_of.unwrap()).await;
+        }
+ 
         loop {
             let stream = listener.accept().await;
             match stream {

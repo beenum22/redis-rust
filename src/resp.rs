@@ -113,7 +113,14 @@ impl RespType {
     }
 
     fn decode_error(raw: &mut RedisBuffer) -> Result<String, RedisError> {
-        Err(RedisError::ParsingError)
+        // TODO: It might have multiple CRLFs. Handle them all. Currently, it only fetches till first occurrence.
+        match Self::_get_value(raw).map_err(|_| RedisError::ParsingError)? {
+            Some(index) => {
+                let buff_ref = &raw.buffer[index.start..index.end + 1];
+                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisError::ParsingError)
+            }
+            None => Err(RedisError::InvalidValue),
+        }
     }
 
     fn decode_integer(raw: &mut RedisBuffer) -> Result<i64, RedisError> {
@@ -476,9 +483,13 @@ impl Operation {
 
     fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
         match word {
-            RespType::String(res) => Err(RedisError::UnknownCommand),
+            RespType::String(res) => {
+                match res.to_lowercase().as_str() {
+                    "pong" => Ok(Self::Ok),
+                    _ => Err(RedisError::UnknownCommand)               }
+            },
             RespType::BulkString(res) => Err(RedisError::UnknownCommand),
-            RespType::Error(_) => Err(RedisError::UnknownCommand),
+            RespType::Error(err) => Ok(Self::Error(err)),
             RespType::Integer(_) => Err(RedisError::UnknownCommand),
             RespType::Array(res) => match &res[0] {
                 RespType::String(val) => todo!(),
@@ -530,15 +541,14 @@ impl RespParser {
         Self { raw: raw_data }
     }
 
-    pub(crate) fn decode(&mut self) -> Result<Operation, RedisError> {
-        let word_type = RespType::decode(&mut self.raw)?;
-        Operation::decode(&mut self.raw, word_type)
+    pub(crate) fn decode(raw: &mut RedisBuffer) -> Result<Operation, RedisError> {
+        let word_type = RespType::decode(raw)?;
+        Operation::decode(raw, word_type)
     }
 
-    pub(crate) fn encode(&mut self, word: Operation) -> Result<Bytes, RedisError> {
+    pub(crate) fn encode(word: Operation) -> Result<Bytes, RedisError> {
         let word_type = Operation::encode(word)?;
         let encoded_bytes = RespType::encode(word_type)?;
-        println!("{:?}", encoded_bytes);
         Ok(encoded_bytes)
     }
 }

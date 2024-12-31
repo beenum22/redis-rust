@@ -19,7 +19,14 @@ pub(crate) enum RedisError {
     RdbInvalidVersion,
     RDB(RDBError),
     State(StateError),
+    Connection(ConnectionError),
     InvalidUTF,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum ConnectionError {
+    FailedReplicaConnection,
+    FailedToWriteBytes,
 }
 
 #[derive(Debug, PartialEq)]
