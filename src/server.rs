@@ -14,7 +14,7 @@ use log::{info, warn, error, debug};
 
 use crate::error::ConnectionError;
 use crate::info::{ReplicationInfo, ServerInfo};
-use crate::ops::ReplicaConfigOperation;
+use crate::ops::{Psync, ReplicaConfigOperation};
 use crate::{
     Config, ConfigOperation, ConfigParam, Operation, RDBError, RdbParser, RedisBuffer, RedisError,
     RedisState, RespParser, SetOverwriteArgs, InfoOperation
@@ -66,6 +66,7 @@ impl RedisServer {
         Ok(())
     }
 
+    // TODO: All commands are executed serially over one TCP session. Check if separate would be better. You might need to flush the buffer.
     async fn configure_replica(port: u16, server: SocketAddr) -> Result<(), RedisError>{
         let mut stream = TcpStream::connect(server).await.map_err(|_| RedisError::Connection(ConnectionError::FailedToWriteBytes))?;
         info!("Connected as replica to {}", server);
@@ -77,39 +78,49 @@ impl RedisServer {
             Operation::Ok => debug!("Replica server is reachable"),
             Operation::Error(err) => error!("Replica Ping response failed. {}", err),
             _ => {
-                // error!("Replica Ping response failed");
                 return Err(RedisError::UnknownResponse)
             }
         }
-        // TODO: All commands are executed serially over one TCP session. Check if separate would be better. You might need to flush the buffer.
         let replconf_port = RespParser::encode(
             Operation::ReplicaConf(ReplicaConfigOperation::ListeningPort(port))
         )?;
-        let replconf_cap = RespParser::encode(
-            Operation::ReplicaConf(ReplicaConfigOperation::Capabilities("psync2".to_string()))
-        )?;
 
         Self::_send_msg(&mut stream, &replconf_port.as_ref()).await?;
-        // let mut buff = Self::_receive_msg(&mut stream).await?;
         match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
             Operation::Ok => debug!("Replica listening port successfully communicated"),
             Operation::Error(err) => error!("Failed to communicate replica listening port. {}", err),
             _ => {
-                // error!("Replica Ping response failed");
                 return Err(RedisError::UnknownResponse)
             }
         }
 
+        let replconf_cap = RespParser::encode(
+            Operation::ReplicaConf(ReplicaConfigOperation::Capabilities(
+                vec![
+                    "eof".to_string(),
+                    "psync2".to_string(),
+                ]))
+        )?;
         Self::_send_msg(&mut stream, &replconf_cap.as_ref()).await?;
-        // let mut buff = Self::_receive_msg(&mut stream).await?;
         match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
             Operation::Ok => debug!("Replica capability successfully configured"),
             Operation::Error(err) => error!("Failed to configure replica capability. {}", err),
             _ => {
-                // error!("Replica Ping response failed");
                 return Err(RedisError::UnknownResponse)
             }
         }
+
+        let psync = RespParser::encode(
+            Operation::Psync(Psync::new("?".to_string(), -1))
+        )?;
+        Self::_send_msg(&mut stream, &psync.as_ref()).await?;
+        // match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
+        //     Operation::Ok => debug!("Replica state synchronization successfully initiated"),
+        //     Operation::Error(err) => error!("Failed to initiate replica state synchronization. {}", err),
+        //     _ => {
+        //         return Err(RedisError::UnknownResponse)
+        //     }
+        // }
 
         Ok(())
     }
@@ -363,7 +374,9 @@ impl RedisServer {
             // println!("Failed to load RDB: {:?}", e);
             warn!("Failed to load RDB: {:?}", e);
         }
-        if self.replica_of.is_some() {
+
+        // TODO: Spawn separate thread maybe.
+        if self.replica_of.is_some() {    
             Self::configure_replica(self.host.port(), self.replica_of.unwrap()).await;
         }
  

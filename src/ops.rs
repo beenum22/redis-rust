@@ -10,13 +10,29 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum ReplicaConfigOperation {
     ListeningPort(u16),
-    Capabilities(String),
+    Capabilities(Vec<String>),
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub(crate) struct Psync {
+    replication_id: String,
+    offset: i16
+}
+
+impl Psync {
+    pub(crate) fn new(id: String, offset: i16) -> Self {
+        Self {
+            replication_id: id,
+            offset: offset,
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum Operation {
     Ping,
     ReplicaConf(ReplicaConfigOperation),
+    Psync(Psync),
     Echo(String),
     Set(SetMap),
     Get(String),
@@ -343,13 +359,22 @@ impl Operation {
                         RespType::BulkString("listening-port".to_string()),
                         RespType::BulkString(port.to_string()),
                     ])),
-                    ReplicaConfigOperation::Capabilities(cap) => Ok(RespType::Array(vec![
-                        RespType::BulkString("REPLCONF".to_string()),
-                        RespType::BulkString("capa".to_string()),
-                        RespType::BulkString(cap),
-                    ])),
+                    ReplicaConfigOperation::Capabilities(cap) => {
+                        let mut arr: Vec<RespType> = Vec::new();
+                        arr.push(RespType::BulkString("REPLCONF".to_string()));
+                        for i in 0..cap.len() {
+                            arr.push(RespType::BulkString("capa".to_string()));
+                            arr.push(RespType::BulkString(cap[i].to_string()));
+                        }
+                        Ok(RespType::Array(arr))
+                    },
                 }
             },
+            Operation::Psync(val) => Ok(RespType::Array(vec![
+                RespType::BulkString("PSYNC".to_string()),
+                RespType::BulkString(val.replication_id),
+                RespType::BulkString(val.offset.to_string()),
+            ])),
             Operation::Echo(val) => Ok(RespType::BulkString(val)),
             Operation::EchoArray(val) => {
                 let mut arr: Vec<RespType> = Vec::new();

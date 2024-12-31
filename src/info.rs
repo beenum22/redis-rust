@@ -2,7 +2,7 @@
 pub(crate) struct ReplicationInfo {
     role: String,
     master_replid: String,
-    master_repl_offset: u16,
+    master_repl_offset: i16,
 }
 
 impl ReplicationInfo {
