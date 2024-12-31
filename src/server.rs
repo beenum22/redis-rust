@@ -20,8 +20,7 @@ use crate::{
 };
 
 pub(crate) struct RedisServer {
-    addr: IpAddr,
-    port: u16,
+    host: SocketAddr,
     db: Arc<RedisState>,
     replica_of: Option<SocketAddr> 
 }
@@ -43,8 +42,8 @@ impl RedisServer {
         };
 
         Self {
-            addr: IpAddr::from_str(addr).unwrap(),  // TODO: Handle errors
-            port: port,
+            // TODO: Handle Result and Option errors
+            host: format!("{addr}:{port}").to_socket_addrs().expect("Invalid socket address").next().unwrap(),
             db: Arc::new(RedisState::new(dir, dbfilename, role)),
             replica_of: remote_server,
         }
@@ -320,13 +319,15 @@ impl RedisServer {
     }
 
     pub(crate) async fn run(&self) -> () {
-        let listener = TcpListener::bind(format!("{}:{}", self.addr.to_string(), self.port))
+        let listener = TcpListener::bind(self.host)
             .await
             .unwrap();
         info!(
             "Redis Server is running on {}:{}",
-            self.addr.to_string(),
-            self.port
+            self.host.ip(),
+            self.host.port(),
+            // self.addr.to_string(),
+            // self.port
         );
         if let Err(e) = Self::load_rdb(self.db.clone()).await {
             // println!("Failed to load RDB: {:?}", e);
