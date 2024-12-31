@@ -32,9 +32,7 @@ impl RedisServer {
             Some(replica) => {
                 let parts: Vec<&str> = replica.split_whitespace().collect();
                 let (host_str, port_str) = (parts[0], parts[1]);
-                let replica_port = port_str.parse::<u16>().expect("Invalid port number");
-                let replica_host = IpAddr::from_str(host_str).unwrap();  // TODO: Handle errors
-                Some(SocketAddr::new(replica_host, replica_port))
+                format!("{host_str}:{port_str}").to_socket_addrs().expect("Invalid socket address").next()
             }
             None => None
         };
