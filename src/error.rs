@@ -5,6 +5,7 @@ pub(crate) enum RedisError {
     ParsingError,
     IncorrectBulkStringSize,
     UnknownCommand,
+    UnknownResponse,
     UnknownConfig,
     CRLFMissing,
     InvalidValue,
@@ -27,6 +28,7 @@ pub(crate) enum RedisError {
 pub(crate) enum ConnectionError {
     FailedReplicaConnection,
     FailedToWriteBytes,
+    FailedToReadBytes,
 }
 
 #[derive(Debug, PartialEq)]

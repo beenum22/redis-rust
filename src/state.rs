@@ -14,7 +14,7 @@ use tokio::sync::{RwLock, RwLockReadGuard};
 use crate::config::ConfigPair;
 use crate::info::{Info, ServerInfo};
 use crate::{
-    error::RDBError, error::RedisError, error::StateError, resp::Operation, Config, ConfigParam,
+    error::RDBError, error::RedisError, error::StateError, ops::Operation, Config, ConfigParam,
 };
 
 #[derive(Debug)]

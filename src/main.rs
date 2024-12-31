@@ -17,11 +17,13 @@ mod resp;
 mod server;
 mod state;
 mod info;
+mod ops;
 
 use config::{Config, ConfigOperation, ConfigParam};
 use error::{RDBError, RedisError};
 use rdb::RdbParser;
-use resp::{Operation, RespParser, RespType};
+use resp::{RespParser, RespType};
+use ops::Operation;
 use server::RedisServer;
 use state::{RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
 use info::{Info, ReplicationInfo, InfoOperation};
