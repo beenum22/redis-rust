@@ -66,7 +66,7 @@ impl RedisServer {
         Ok(())
     }
 
-    async fn configure_replica(server: SocketAddr) -> Result<(), RedisError>{
+    async fn configure_replica(port: u16, server: SocketAddr) -> Result<(), RedisError>{
         let mut stream = TcpStream::connect(server).await.map_err(|_| RedisError::Connection(ConnectionError::FailedToWriteBytes))?;
         info!("Connected as replica to {}", server);
 
@@ -81,9 +81,9 @@ impl RedisServer {
                 return Err(RedisError::UnknownResponse)
             }
         }
-        // TODO: All commands are executed serially over one TCP session. Check if separate would be better.
+        // TODO: All commands are executed serially over one TCP session. Check if separate would be better. You might need to flush the buffer.
         let replconf_port = RespParser::encode(
-            Operation::ReplicaConf(ReplicaConfigOperation::ListeningPort(server.port()))
+            Operation::ReplicaConf(ReplicaConfigOperation::ListeningPort(port))
         )?;
         let replconf_cap = RespParser::encode(
             Operation::ReplicaConf(ReplicaConfigOperation::Capabilities("psync2".to_string()))
@@ -364,7 +364,7 @@ impl RedisServer {
             warn!("Failed to load RDB: {:?}", e);
         }
         if self.replica_of.is_some() {
-            Self::configure_replica(self.replica_of.unwrap()).await;
+            Self::configure_replica(self.host.port(), self.replica_of.unwrap()).await;
         }
  
         loop {
