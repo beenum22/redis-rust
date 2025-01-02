@@ -81,18 +81,30 @@ impl RedisServer {
                 return Err(RedisError::UnknownResponse)
             }
         }
-
-        let mut replconf: Vec<ReplicaConfigOperation> = Vec::new();
-        replconf.push(ReplicaConfigOperation::ListeningPort(port));
-        replconf.push(ReplicaConfigOperation::Capabilities("eof".to_string()));
-        replconf.push(ReplicaConfigOperation::Capabilities("psync2".to_string()));
-        let replconf_enc = RespParser::encode(
-            Operation::ReplicaConf(replconf)
+        let replconf_port = RespParser::encode(
+            Operation::ReplicaConf(ReplicaConfigOperation::ListeningPort(port))
         )?;
-        Self::_send_msg(&mut stream, &replconf_enc.as_ref()).await?;
+
+        Self::_send_msg(&mut stream, &replconf_port.as_ref()).await?;
         match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-            Operation::Ok => debug!("Replica listening port, and eof and psync2 capabilities successfully configured"),
-            Operation::Error(err) => error!("Failed to configure replica. {}", err),
+            Operation::Ok => debug!("Replica listening port successfully communicated"),
+            Operation::Error(err) => error!("Failed to communicate replica listening port. {}", err),
+            _ => {
+                return Err(RedisError::UnknownResponse)
+            }
+        }
+
+        let replconf_cap = RespParser::encode(
+            Operation::ReplicaConf(ReplicaConfigOperation::Capabilities(
+                vec![
+                    "eof".to_string(),
+                    "psync2".to_string(),
+                ]))
+        )?;
+        Self::_send_msg(&mut stream, &replconf_cap.as_ref()).await?;
+        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
+            Operation::Ok => debug!("Replica capability successfully configured"),
+            Operation::Error(err) => error!("Failed to configure replica capability. {}", err),
             _ => {
                 return Err(RedisError::UnknownResponse)
             }
