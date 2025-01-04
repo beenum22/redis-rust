@@ -15,8 +15,8 @@ pub(crate) enum ReplicaConfigOperation {
 
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct Psync {
-    replication_id: String,
-    offset: i16
+    pub(crate) replication_id: String,
+    pub(crate) offset: i16
 }
 
 impl Psync {
@@ -34,6 +34,7 @@ pub(crate) enum Operation {
     ReplicaConf(Vec<ReplicaConfigOperation>),
     Psync(Psync),
     Echo(String),
+    EchoString(String),
     Set(SetMap),
     Get(String),
     Config(Vec<ConfigOperation>),
@@ -334,6 +335,13 @@ impl Operation {
         Ok(replconf)
     }
 
+    fn decode_psync(args: &[RespType]) -> Result<Psync, RedisError> {
+        match (&args[0], &args[1]) {
+            (RespType::BulkString(key), RespType::BulkString(val)) => Ok(Psync::new(key.to_string(), val.as_str().parse::<i16>().map_err(|_| RedisError::ParsingError)?)),
+            _ => return Err(RedisError::InvalidValueType)
+        }
+    }
+
     pub(crate) fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
         match word {
             RespType::String(res) => {
@@ -352,6 +360,7 @@ impl Operation {
                 RespType::BulkString(val) => match val.to_lowercase().as_str() {
                     "ping" => Ok(Self::Ping),
                     "replconf" => Ok(Self::ReplicaConf(Self::decode_replconf(&res[1..])?)),
+                    "psync" => Ok(Self::Psync(Self::decode_psync(&res[1..])?)),
                     "echo" => match &res[1] {
                         RespType::BulkString(val) => Ok(Self::Echo(val.clone())),
                         _ => todo!(),
@@ -397,6 +406,7 @@ impl Operation {
                 RespType::BulkString(val.offset.to_string()),
             ])),
             Operation::Echo(val) => Ok(RespType::BulkString(val)),
+            Operation::EchoString(val) => Ok(RespType::String(val)),
             Operation::EchoArray(val) => {
                 let mut arr: Vec<RespType> = Vec::new();
                 for i in 0..val.len() {

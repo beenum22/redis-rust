@@ -150,6 +150,15 @@ impl RedisServer {
             Operation::Ping => Ok(Operation::Echo("PONG".to_string())),
             Operation::Echo(_) => Ok(word),
             Operation::ReplicaConf(_) => Ok(Operation::Ok),  // TODO: Parse later.
+            Operation::Psync(val) => {
+                match (val.replication_id.as_str(), val.offset as i16) {
+                    ("?", -1) => {
+                        let info = RedisState::get_info(db.info.clone()).await?;
+                        Ok(Operation::EchoString(format!("FULLRESYNC {} {}", info.replication.master_replid, info.replication.master_repl_offset)))
+                    },
+                    (_, _) => Err(RedisError::UnknownConfig),
+                }
+            }
             Operation::Set(set_args) => match &set_args.overwrite {
                 Some(val) => {
                     let key_state =

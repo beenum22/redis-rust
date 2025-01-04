@@ -1,8 +1,8 @@
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ReplicationInfo {
     role: String,
-    master_replid: String,
-    master_repl_offset: i16,
+    pub(crate) master_replid: String,
+    pub(crate) master_repl_offset: i16,
 }
 
 impl ReplicationInfo {
