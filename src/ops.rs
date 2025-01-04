@@ -2,7 +2,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::{
     config::{ConfigOperation, ConfigPair, ConfigParam},
-    error::RedisError, info::InfoOperation, resp::RespType,
+    error::RedisError, info::{InfoOperation, ReplicationInfo}, resp::RespType,
     state::{SetExpiryArgs, SetMap, SetOverwriteArgs},
     RedisBuffer
 };
@@ -10,7 +10,7 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum ReplicaConfigOperation {
     ListeningPort(u16),
-    Capabilities(Vec<String>),
+    Capabilities(String),
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -31,7 +31,7 @@ impl Psync {
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum Operation {
     Ping,
-    ReplicaConf(ReplicaConfigOperation),
+    ReplicaConf(Vec<ReplicaConfigOperation>),
     Psync(Psync),
     Echo(String),
     Set(SetMap),
@@ -315,6 +315,25 @@ impl Operation {
         Ok(arr)
     }
 
+    fn decode_replconf(args: &[RespType]) -> Result<Vec<ReplicaConfigOperation>, RedisError> {
+        let mut replconf: Vec<ReplicaConfigOperation> = Vec::new();
+        for chunk in args.chunks(2) {
+            match (&chunk[0], &chunk[1]) {
+                (RespType::BulkString(key), RespType::BulkString(val)) => {
+                    if key == "capa" {
+                        replconf.push(ReplicaConfigOperation::Capabilities(val.to_owned()));
+                    } else if key == "listening-port" {
+                        replconf.push(ReplicaConfigOperation::ListeningPort(
+                            val.as_str().parse::<u16>().map_err(|_| RedisError::ParsingError)?
+                        ));
+                    }
+                },
+                _ => ()
+            }
+        }
+        Ok(replconf)
+    }
+
     pub(crate) fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
         match word {
             RespType::String(res) => {
@@ -332,6 +351,7 @@ impl Operation {
                 RespType::Integer(_) => todo!(),
                 RespType::BulkString(val) => match val.to_lowercase().as_str() {
                     "ping" => Ok(Self::Ping),
+                    "replconf" => Ok(Self::ReplicaConf(Self::decode_replconf(&res[1..])?)),
                     "echo" => match &res[1] {
                         RespType::BulkString(val) => Ok(Self::Echo(val.clone())),
                         _ => todo!(),
@@ -353,22 +373,23 @@ impl Operation {
         match word {
             Operation::Ping => Ok(RespType::Array(vec![RespType::BulkString("PING".to_string())])),
             Operation::ReplicaConf(conf) => {
-                match conf {
-                    ReplicaConfigOperation::ListeningPort(port) => Ok(RespType::Array(vec![
-                        RespType::BulkString("REPLCONF".to_string()),
-                        RespType::BulkString("listening-port".to_string()),
-                        RespType::BulkString(port.to_string()),
-                    ])),
-                    ReplicaConfigOperation::Capabilities(cap) => {
-                        let mut arr: Vec<RespType> = Vec::new();
-                        arr.push(RespType::BulkString("REPLCONF".to_string()));
-                        for i in 0..cap.len() {
-                            arr.push(RespType::BulkString("capa".to_string()));
-                            arr.push(RespType::BulkString(cap[i].to_string()));
-                        }
-                        Ok(RespType::Array(arr))
-                    },
+                let mut arr: Vec<RespType> = Vec::new();
+                if conf.len() > 0 {
+                    arr.push(RespType::BulkString("REPLCONF".to_string()));
                 }
+                for i in conf {
+                    match i {
+                        ReplicaConfigOperation::ListeningPort(port) => {
+                            arr.push(RespType::BulkString("listening-port".to_string()));
+                            arr.push(RespType::BulkString(port.to_string()));
+                        }
+                        ReplicaConfigOperation::Capabilities(cap) => {
+                            arr.push(RespType::BulkString("capa".to_string()));
+                            arr.push(RespType::BulkString(cap.to_string()));
+                        }
+                    }
+                }
+                Ok(RespType::Array(arr))
             },
             Operation::Psync(val) => Ok(RespType::Array(vec![
                 RespType::BulkString("PSYNC".to_string()),
