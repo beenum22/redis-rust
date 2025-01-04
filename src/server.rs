@@ -363,9 +363,14 @@ impl RedisServer {
             warn!("Failed to load RDB: {:?}", e);
         }
 
-        // TODO: Spawn separate thread maybe.
         if self.replica_of.is_some() {    
-            Self::configure_replica(self.host.port(), self.replica_of.unwrap()).await;
+            let port = self.host.port();
+            let replica_of = self.replica_of.unwrap().clone();
+            tokio::spawn(async move {
+                if let Err(e) = Self::configure_replica(port, replica_of).await {
+                    error!("Failed to configure replica: {:?}", e);
+                }
+            });
         }
  
         loop {
