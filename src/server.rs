@@ -149,6 +149,7 @@ impl RedisServer {
         match word {
             Operation::Ping => Ok(Operation::Echo("PONG".to_string())),
             Operation::Echo(_) => Ok(word),
+            Operation::ReplicaConf(_) => Ok(Operation::Ok),  // TODO: Parse later.
             Operation::Set(set_args) => match &set_args.overwrite {
                 Some(val) => {
                     let key_state =
