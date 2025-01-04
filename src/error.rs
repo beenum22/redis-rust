@@ -3,25 +3,17 @@ use lzf::LzfError;
 #[derive(Debug, PartialEq)]
 pub(crate) enum RedisError {
     ParsingError,
-    IncorrectBulkStringSize,
     UnknownCommand,
     UnknownResponse,
     UnknownConfig,
-    CRLFMissing,
-    InvalidValue,
     InvalidValueType,
-    InvalidArraySize,
     InvalidArgValue(String),
     MissingArgs,
-    SystemError(String),
     SyntaxError,
-    RdbHexDecodeError,
-    RdbMissingMagicString,
-    RdbInvalidVersion,
     RDB(RDBError),
     State(StateError),
     Connection(ConnectionError),
-    InvalidUTF,
+    RESP(RespError),
 }
 
 #[derive(Debug, PartialEq)]
@@ -53,4 +45,15 @@ pub(crate) enum StateError {
     UnknownConfig,
     UnknownKey,
     LockError,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum RespError {
+    UnknownType,
+    InvalidValue,
+    UnsupportedType,
+    CRLFMissing,
+    UTFDecodingFailed,
+    IntegerParsingFailed,
+    IncorrectBulkStringSize,
 }

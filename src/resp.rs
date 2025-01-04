@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    Operation, config::ConfigPair, info::InfoOperation, ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
+    Operation, config::ConfigPair, info::InfoOperation, ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs, error::RespError
 };
 
 #[derive(Debug)]
@@ -51,9 +51,9 @@ impl RespType {
             b'*' => Ok(Self::Array(Self::decode_array(raw)?)),
             b'_' => match Self::decode_null(raw)?.is_none() {
                 true => Ok(Self::Null),
-                false => Err(RedisError::ParsingError),
+                false => Err(RedisError::RESP(RespError::InvalidValue)),
             },
-            _ => Err(RedisError::ParsingError),
+            _ => Err(RedisError::RESP(RespError::UnknownType)),
         }
     }
 
@@ -64,7 +64,7 @@ impl RespType {
             Self::BulkString(val) => Self::encode_bulk_string(val),
             Self::Array(val) => Self::encode_array(val),
             Self::Null => Self::encode_null(),
-            _ => Err(RedisError::ParsingError),
+            _ => Err(RedisError::RESP(RespError::UnsupportedType)),
         }
     }
 
@@ -93,18 +93,18 @@ impl RespType {
                 }
                 Ok(Some(val))
             }
-            None => Err(RedisError::CRLFMissing),
+            None => Err(RedisError::RESP(RespError::CRLFMissing)),
         }
     }
 
     fn decode_string(raw: &mut RedisBuffer) -> Result<String, RedisError> {
-        let mut value_index = Self::_get_value(raw).map_err(|_| RedisError::ParsingError)?;
+        let value_index = Self::_get_value(raw)?;
         match value_index {
             Some(index) => {
                 let buff_ref = &raw.buffer[index.start..index.end + 1];
-                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisError::ParsingError)
+                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
             }
-            None => Err(RedisError::InvalidValue),
+            None => Err(RedisError::RESP(RespError::InvalidValue)),
         }
     }
 
@@ -114,26 +114,26 @@ impl RespType {
 
     fn decode_error(raw: &mut RedisBuffer) -> Result<String, RedisError> {
         // TODO: It might have multiple CRLFs. Handle them all. Currently, it only fetches till first occurrence.
-        match Self::_get_value(raw).map_err(|_| RedisError::ParsingError)? {
+        match Self::_get_value(raw)? {
             Some(index) => {
                 let buff_ref = &raw.buffer[index.start..index.end + 1];
-                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisError::ParsingError)
+                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
             }
-            None => Err(RedisError::InvalidValue),
+            None => Err(RedisError::RESP(RespError::InvalidValue)),
         }
     }
 
     fn decode_integer(raw: &mut RedisBuffer) -> Result<i64, RedisError> {
-        let mut value_index = Self::_get_value(raw).map_err(|_| RedisError::ParsingError)?;
+        let mut value_index = Self::_get_value(raw)?;
         match value_index {
             Some(index) => {
                 let value_str = str::from_utf8(&raw.buffer[index.start..index.end + 1])
-                    .map_err(|err| RedisError::ParsingError)?;
+                    .map_err(|err| RedisError::RESP(RespError::UTFDecodingFailed))?;
                 value_str
                     .parse::<i64>()
-                    .map_err(|_| RedisError::ParsingError)
+                    .map_err(|_| RedisError::RESP(RespError::IntegerParsingFailed))
             }
-            None => Err(RedisError::ParsingError),
+            None => Err(RedisError::RESP(RespError::InvalidValue)),
         }
     }
 
@@ -144,14 +144,14 @@ impl RespType {
     fn decode_bulk_string(raw: &mut RedisBuffer) -> Result<String, RedisError> {
         // Get Bulk String size
         let count = Self::decode_integer(raw)?;
-        let bulk_str_val = Self::_get_value(raw).map_err(|err| RedisError::ParsingError)?;
+        let bulk_str_val = Self::_get_value(raw)?;
         match bulk_str_val {
             Some(val) => {
                 if val.end - val.start + 1 != count as usize {
-                    return Err(RedisError::IncorrectBulkStringSize);
+                    return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
                 }
                 let buff_ref = &raw.buffer[val.start..val.end + 1];
-                String::from_utf8(buff_ref.to_vec()).map_err(|_err| RedisError::ParsingError)
+                String::from_utf8(buff_ref.to_vec()).map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))
             }
             None => Ok(String::from("")),
         }
@@ -176,7 +176,7 @@ impl RespType {
         for i in val {
             enc_val.push_str(
                 str::from_utf8(&Self::encode(i).unwrap())
-                    .map_err(|err| RedisError::ParsingError)?,
+                    .map_err(|err| RedisError::RESP(RespError::UTFDecodingFailed))?,
             );
         }
         Ok(Bytes::from(enc_val))
@@ -184,7 +184,7 @@ impl RespType {
 
     fn decode_null(raw: &mut RedisBuffer) -> Result<Option<String>, RedisError> {
         match Self::_get_value(raw)? {
-            Some(_) => Err(RedisError::InvalidValue),
+            Some(_) => Err(RedisError::RESP(RespError::InvalidValue)),
             None => Ok(None),
         }
     }
