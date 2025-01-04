@@ -82,17 +82,30 @@ impl RedisServer {
             }
         }
 
-        let mut replconf: Vec<ReplicaConfigOperation> = Vec::new();
-        replconf.push(ReplicaConfigOperation::ListeningPort(port));
-        replconf.push(ReplicaConfigOperation::Capabilities("eof".to_string()));
-        replconf.push(ReplicaConfigOperation::Capabilities("psync2".to_string()));
-        let replconf_enc = RespParser::encode(
-            Operation::ReplicaConf(replconf)
+        let replconf_port: Vec<ReplicaConfigOperation> = vec![ReplicaConfigOperation::ListeningPort(port)];
+        let replconf_port_enc = RespParser::encode(
+            Operation::ReplicaConf(replconf_port)
         )?;
-        Self::_send_msg(&mut stream, &replconf_enc.as_ref()).await?;
+        Self::_send_msg(&mut stream, &replconf_port_enc.as_ref()).await?;
         match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-            Operation::Ok => debug!("Replica listening port, and eof and psync2 capabilities successfully configured"),
-            Operation::Error(err) => error!("Failed to configure replica. {}", err),
+            Operation::Ok => debug!("Replica listening port successfully configured"),
+            Operation::Error(err) => error!("Failed to configure replica listening port. {}", err),
+            _ => {
+                return Err(RedisError::UnknownResponse)
+            }
+        }
+
+        let replconf_capa: Vec<ReplicaConfigOperation> = vec![
+            ReplicaConfigOperation::Capabilities("eof".to_string()),
+            ReplicaConfigOperation::Capabilities("psync2".to_string()),
+        ];
+        let replconf_capa_enc = RespParser::encode(
+            Operation::ReplicaConf(replconf_capa)
+        )?;
+        Self::_send_msg(&mut stream, &replconf_capa_enc.as_ref()).await?;
+        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
+            Operation::Ok => debug!("Replica eof and psync2 capabilities successfully configured"),
+            Operation::Error(err) => error!("Failed to configure replica capabilities. {}", err),
             _ => {
                 return Err(RedisError::UnknownResponse)
             }
