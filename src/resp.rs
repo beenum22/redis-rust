@@ -101,8 +101,9 @@ impl RespType {
         }
     }
 
+    // TODO: Refactor and improve parsing here. Too many Vecs in there.
     fn encode_bulkstring_without_crlf(val: String) -> Result<Bytes, RedisError> {
-        let bytes = hex::decode(val).map_err(|_| RedisError::RESP(RespError::HexDecodingFailed))?;
+        let bytes = val.as_bytes().to_vec();
         let mut bytes_len = format!("${}\r\n", bytes.len()).as_bytes().to_vec();
         bytes_len.extend(bytes); 
         Ok(Bytes::from(bytes_len))
@@ -168,7 +169,7 @@ impl RespType {
                 if raw.buffer[raw.index..].len() != count as usize {
                     return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
                 }
-                Ok(Self::BulkStringWithoutCRLF(String::from_utf8(raw.buffer[raw.index..].to_vec()).map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))?))
+                Ok(Self::BulkStringWithoutCRLF(String::from_utf8_lossy(&raw.buffer[raw.index..]).to_string()))
             },
             Err(_) => Err(RedisError::ParsingError),
         }
