@@ -356,7 +356,7 @@ impl Operation {
             },
             RespType::BulkString(res) => Err(RedisError::UnknownCommand),
             RespType::BulkStringWithoutCRLF(res) => {
-                let mut cursor = Cursor::new(hex::decode(res).map_err(|err| RedisError::InvalidArgValue(format!("err: {:?}", err)))?);
+                let mut cursor = Cursor::new(res);
                 match RdbParser::decode(&mut cursor) {  
                     Ok(parser) => Ok(Self::RdbFile(parser)),
                     Err(err) => {

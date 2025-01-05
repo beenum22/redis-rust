@@ -56,4 +56,5 @@ pub(crate) enum RespError {
     UTFDecodingFailed,
     IntegerParsingFailed,
     IncorrectBulkStringSize,
+    HexDecodingFailed,
 }

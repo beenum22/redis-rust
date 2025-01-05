@@ -102,7 +102,10 @@ impl RespType {
     }
 
     fn encode_bulkstring_without_crlf(val: String) -> Result<Bytes, RedisError> {
-        Ok(Bytes::from(format!("${}\r\n{}", val.len(), val)))
+        let bytes = hex::decode(val).map_err(|_| RedisError::RESP(RespError::HexDecodingFailed))?;
+        let mut bytes_len = format!("${}\r\n", bytes.len()).as_bytes().to_vec();
+        bytes_len.extend(bytes); 
+        Ok(Bytes::from(bytes_len))
     }
 
     fn decode_string(raw: &mut RedisBuffer) -> Result<String, RedisError> {

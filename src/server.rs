@@ -164,8 +164,7 @@ impl RedisServer {
                     ("?", -1) => {
                         let info = RedisState::get_info(db.info.clone()).await?;
                         actions.push(Operation::EchoString(format!("FULLRESYNC {} {}", info.replication.master_replid, info.replication.master_repl_offset)));
-                        // actions.push(Operation::EchoRaw("524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2".to_string()));
-                        actions.push(Operation::EchoRaw("".to_string()));
+                        actions.push(Operation::EchoRaw("524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2".to_string()));
                     },
                     (_, _) => return Err(RedisError::UnknownConfig),
                 }
