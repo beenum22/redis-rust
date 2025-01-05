@@ -66,9 +66,9 @@ impl RespType {
             Self::String(val) => Self::encode_string(val),
             Self::Integer(val) => Self::encode_integer(val),
             Self::BulkString(val) => Self::encode_bulk_string(val),
+            Self::BulkStringWithoutCRLF(val) => Self::encode_bulkstring_without_crlf(val),
             Self::Array(val) => Self::encode_array(val),
             Self::Null => Self::encode_null(),
-            Self::BulkStringWithoutCRLF(val) => Self::encode_nonstandard(val),
             _ => Err(RedisError::RESP(RespError::UnsupportedType)),
         }
     }
@@ -101,11 +101,7 @@ impl RespType {
         }
     }
 
-    fn decode_nonstandard(raw: &mut RedisBuffer) -> Result<String, RedisError> {
-        String::from_utf8(raw.buffer.to_vec()).map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
-    }
-
-    fn encode_nonstandard(val: String) -> Result<Bytes, RedisError> {
+    fn encode_bulkstring_without_crlf(val: String) -> Result<Bytes, RedisError> {
         Ok(Bytes::from(format!("${}\r\n{}", val.len(), val)))
     }
 

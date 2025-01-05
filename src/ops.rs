@@ -421,7 +421,7 @@ impl Operation {
             ])),
             Operation::Echo(val) => Ok(RespType::BulkString(val)),
             Operation::EchoString(val) => Ok(RespType::String(val)),
-            // Operation::EchoRaw(val) => Ok(RespType::NonStandard(val)),
+            Operation::EchoRaw(val) => Ok(RespType::BulkStringWithoutCRLF(val)),
             Operation::EchoArray(val) => {
                 let mut arr: Vec<RespType> = Vec::new();
                 for i in 0..val.len() {
