@@ -50,9 +50,12 @@ struct Cli {
 
     #[arg(long)]
     replicaof: Option<String>,
+
+    #[arg(short, long, default_value = "info")]
+    logging: String,
 }
 
-fn setup_logger() -> Result<(), fern::InitError> {
+fn setup_logger(log_level: LevelFilter) -> Result<(), fern::InitError> {
     fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
@@ -61,7 +64,7 @@ fn setup_logger() -> Result<(), fern::InitError> {
                 message
             ))
         })
-        .level(log::LevelFilter::Debug)
+        .level(log_level)
         .chain(std::io::stdout())
         .chain(fern::log_file("output.log")?)
         .apply()?;
@@ -71,7 +74,20 @@ fn setup_logger() -> Result<(), fern::InitError> {
 #[tokio::main]
 async fn main() {
     let args = Cli::parse();
-    setup_logger().unwrap();
+
+    let log_level = match args.logging.to_lowercase().as_str() {
+        "error" => LevelFilter::Error,
+        "warn" => LevelFilter::Warn,
+        "info" => LevelFilter::Info,
+        "debug" => LevelFilter::Debug,
+        "trace" => LevelFilter::Trace,
+        _ => {
+            println!("Invalid log level '{}', defaulting to 'info'", args.logging);
+            LevelFilter::Info
+        }
+    };
+
+    setup_logger(log_level).unwrap();
 
     let redis_server = RedisServer::new(args.host.as_str(), args.port, args.dir, args.dbfilename, args.replicaof);
     redis_server.run().await
