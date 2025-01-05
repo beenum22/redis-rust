@@ -1,10 +1,7 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{io::Cursor, time::{Duration, SystemTime, UNIX_EPOCH}};
 
 use crate::{
-    config::{ConfigOperation, ConfigPair, ConfigParam},
-    error::RedisError, info::{InfoOperation, ReplicationInfo}, resp::RespType,
-    state::{SetExpiryArgs, SetMap, SetOverwriteArgs},
-    RedisBuffer
+    config::{ConfigOperation, ConfigPair, ConfigParam}, error::RedisError, error::RDBError, info::{InfoOperation, ReplicationInfo}, rdb::RdbParser, resp::RespType, state::{SetExpiryArgs, SetMap, SetOverwriteArgs}, RedisBuffer
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -35,6 +32,7 @@ pub(crate) enum Operation {
     Psync(Psync),
     Echo(String),
     EchoString(String),
+    EchoRaw(String),
     Set(SetMap),
     Get(String),
     Config(Vec<ConfigOperation>),
@@ -43,8 +41,9 @@ pub(crate) enum Operation {
     Nil,
     EchoArray(Vec<Operation>),
     Info(Vec<InfoOperation>),
+    RdbFile(RdbParser),
     Error(String),
-    Unknown,
+    // Unknown,
 }
 
 impl Operation {
@@ -343,6 +342,8 @@ impl Operation {
     }
 
     pub(crate) fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
+        // println!("Word: {:?}", word);
+        // println!("Buffer: {:?}", raw.buffer);
         match word {
             RespType::String(res) => {
                 match res.to_lowercase().as_str() {
@@ -373,6 +374,15 @@ impl Operation {
                     _ => Err(RedisError::UnknownCommand),
                 },
                 _ => Err(RedisError::UnknownCommand),
+            },
+            RespType::NonStandard(val) => {
+                let mut cursor = Cursor::new(val);
+                match RdbParser::decode(&mut cursor) {  
+                    Ok(parser) => Ok(Self::RdbFile(parser)),
+                    Err(err) => {
+                        print!("{:?}", err);
+                        Err(RedisError::RDB(RDBError::MissingBytes))},
+                }
             },
             RespType::Null => Err(RedisError::UnknownCommand),
         }
@@ -407,6 +417,7 @@ impl Operation {
             ])),
             Operation::Echo(val) => Ok(RespType::BulkString(val)),
             Operation::EchoString(val) => Ok(RespType::String(val)),
+            Operation::EchoRaw(val) => Ok(RespType::NonStandard(val)),
             Operation::EchoArray(val) => {
                 let mut arr: Vec<RespType> = Vec::new();
                 for i in 0..val.len() {

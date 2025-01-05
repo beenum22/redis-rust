@@ -75,7 +75,7 @@ impl RdbStringEncoding {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct RdbAuxField {
     key: String,
     value: String,
@@ -87,12 +87,12 @@ pub(crate) struct RdbDbResize {
     expires_size: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct RdbSelectDb {
     pub(crate) keys: Vec<Operation>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct RdbParser {
     version: String,
     pub(crate) aux_keys: Vec<RdbAuxField>,

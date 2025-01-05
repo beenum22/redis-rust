@@ -26,6 +26,7 @@ pub(crate) enum RespType {
     BulkString(String),
     Array(Vec<RespType>),
     Null,
+    NonStandard(String),
     //     Boolean(bool),
     //     Double(f32),
     //     BigNumber(i128),
@@ -53,7 +54,7 @@ impl RespType {
                 true => Ok(Self::Null),
                 false => Err(RedisError::RESP(RespError::InvalidValue)),
             },
-            _ => Err(RedisError::RESP(RespError::UnknownType)),
+            _ => Ok(Self::NonStandard(Self::decode_nonstandard(raw)?)),
         }
     }
 
@@ -64,6 +65,7 @@ impl RespType {
             Self::BulkString(val) => Self::encode_bulk_string(val),
             Self::Array(val) => Self::encode_array(val),
             Self::Null => Self::encode_null(),
+            Self::NonStandard(val) => Self::encode_nonstandard(val),
             _ => Err(RedisError::RESP(RespError::UnsupportedType)),
         }
     }
@@ -95,6 +97,14 @@ impl RespType {
             }
             None => Err(RedisError::RESP(RespError::CRLFMissing)),
         }
+    }
+
+    fn decode_nonstandard(raw: &mut RedisBuffer) -> Result<String, RedisError> {
+        String::from_utf8(raw.buffer.to_vec()).map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
+    }
+
+    fn encode_nonstandard(val: String) -> Result<Bytes, RedisError> {
+        Ok(Bytes::from(format!("${}\r\n{}", val.len(), val)))
     }
 
     fn decode_string(raw: &mut RedisBuffer) -> Result<String, RedisError> {

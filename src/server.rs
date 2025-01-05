@@ -10,7 +10,7 @@ use std::vec;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
-use log::{info, warn, error, debug};
+use log::{info, warn, error, debug, trace};
 
 use crate::error::ConnectionError;
 use crate::info::{ReplicationInfo, ServerInfo};
@@ -115,13 +115,13 @@ impl RedisServer {
             Operation::Psync(Psync::new("?".to_string(), -1))
         )?;
         Self::_send_msg(&mut stream, &psync.as_ref()).await?;
-        // match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-        //     Operation::Ok => debug!("Replica state synchronization successfully initiated"),
-        //     Operation::Error(err) => error!("Failed to initiate replica state synchronization. {}", err),
-        //     _ => {
-        //         return Err(RedisError::UnknownResponse)
-        //     }
-        // }
+        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
+            Operation::Ok => debug!("Replica state synchronization successfully initiated"),
+            Operation::Error(err) => error!("Failed to initiate replica state synchronization. {}", err),
+            _ => {
+                return Err(RedisError::UnknownResponse)
+            }
+        }
 
         Ok(())
     }
@@ -137,7 +137,7 @@ impl RedisServer {
         match RdbParser::decode(&mut db_file)?.dbs.get(&0) {  
             Some(selectdb) => {
                 for i in selectdb.keys.iter() {
-                    Self::_action(db.clone(), i.clone()).await?;
+                    Self::action(db.clone(), i.clone()).await?;
                 }
             }
             None => (),
@@ -145,18 +145,20 @@ impl RedisServer {
         Ok(())
     }
 
-    async fn _action(db: Arc<RedisState>, word: Operation) -> Result<Operation, RedisError> {
+    async fn action(db: Arc<RedisState>, word: Operation) -> Result<Vec<Operation>, RedisError> {
+        let mut actions: Vec<Operation> = Vec::new();
         match word {
-            Operation::Ping => Ok(Operation::Echo("PONG".to_string())),
-            Operation::Echo(_) => Ok(word),
-            Operation::ReplicaConf(_) => Ok(Operation::Ok),  // TODO: Parse later.
+            Operation::Ping => actions.push(Operation::Echo("PONG".to_string())),
+            Operation::Echo(_) => actions.push(word),
+            Operation::ReplicaConf(_) => actions.push(Operation::Ok),  // TODO: Parse later.
             Operation::Psync(val) => {
                 match (val.replication_id.as_str(), val.offset as i16) {
                     ("?", -1) => {
                         let info = RedisState::get_info(db.info.clone()).await?;
-                        Ok(Operation::EchoString(format!("FULLRESYNC {} {}", info.replication.master_replid, info.replication.master_repl_offset)))
+                        actions.push(Operation::EchoString(format!("FULLRESYNC {} {}", info.replication.master_replid, info.replication.master_repl_offset)));
+                        actions.push(Operation::EchoRaw("524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2".to_string()));
                     },
-                    (_, _) => Err(RedisError::UnknownConfig),
+                    (_, _) => return Err(RedisError::UnknownConfig),
                 }
             }
             Operation::Set(set_args) => match &set_args.overwrite {
@@ -172,9 +174,9 @@ impl RedisServer {
                                     set_args,
                                 )
                                 .await?;
-                                Ok(Operation::Ok)
+                                actions.push(Operation::Ok)
                             } else {
-                                Ok(Operation::Nil)
+                                actions.push(Operation::Nil)
                             }
                         }
                         SetOverwriteArgs::XX => {
@@ -185,16 +187,16 @@ impl RedisServer {
                                     set_args,
                                 )
                                 .await?;
-                                Ok(Operation::Ok)
+                                actions.push(Operation::Ok)
                             } else {
-                                Ok(Operation::Nil)
+                                actions.push(Operation::Nil)
                             }
                         }
                     }
                 }
                 None => {
                     RedisState::set_key(db.state.clone(), set_args.key.clone(), set_args).await?;
-                    Ok(Operation::Ok)
+                    actions.push(Operation::Ok)
                 }
             },
             Operation::Get(val) => {
@@ -206,18 +208,18 @@ impl RedisServer {
                             Some(expiry) => {
                                 let now = SystemTime::now();
                                 match now > expiry {
-                                    false => Ok(Operation::Echo(value_map.val.clone())),
+                                    false => actions.push(Operation::Echo(value_map.val.clone())),
                                     true => {
                                         RedisState::get_key(db.state.clone(), &val)
                                             .await?;
-                                        Ok(Operation::Nil)
+                                        actions.push(Operation::Nil)
                                     }
                                 }
                             }
-                            None => Ok(Operation::Echo(value_map.val.clone())),
+                            None => actions.push(Operation::Echo(value_map.val.clone())),
                         }
                     }
-                    None => Ok(Operation::Nil),
+                    None => actions.push(Operation::Nil),
                 }
             }
             Operation::Config(val_arr) => {
@@ -260,7 +262,7 @@ impl RedisServer {
                                 _ => (),
                             }
                         }
-                        Ok(Operation::EchoArray(config_arr))
+                        actions.push(Operation::EchoArray(config_arr))
                     }
                     ConfigOperation::Set(_) => {
                         for i in 0..val_arr.len() {
@@ -283,7 +285,7 @@ impl RedisServer {
                                 _ => (),
                             }
                         }
-                        Ok(Operation::Ok)
+                        actions.push(Operation::Ok)
                     }
                 }
             }
@@ -301,7 +303,7 @@ impl RedisServer {
                         }
                     }
                 }
-                Ok(Operation::EchoArray(arr))
+                actions.push(Operation::EchoArray(arr))
             }
             Operation::Info(val) => {
                 let mut arr: Vec<String> = Vec::new();
@@ -316,12 +318,12 @@ impl RedisServer {
                         },
                     }
                 }
-                Ok(Operation::Echo(arr.join("\n")))
+                actions.push(Operation::Echo(arr.join("\n")))
             }
-            Operation::Nil => Ok(Operation::Nil),
-            Operation::Unknown => Err(RedisError::UnknownCommand),
-            _ => Err(RedisError::UnknownCommand),
+            Operation::Nil => actions.push(Operation::Nil),
+            _ => return Err(RedisError::UnknownCommand),
         }
+        Ok(actions)
     }
 
     async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<RedisState>) -> () {
@@ -342,18 +344,26 @@ impl RedisServer {
                     debug!("TCP connection from {:?} closed", addr);
                     break;
                 }
-                debug!("Received: {:?}", buff.buffer);
+                trace!("Received Bytes: {:?}", buff.buffer);
 
                 match RespParser::decode(&mut buff) {
                     Ok(decoded_word) => {
-                        match Self::_action(db.clone(), decoded_word).await {
-                            Ok(action_word) => match RespParser::encode(action_word) {
-                                Ok(reply) => stream.write_all(reply.as_ref()).await.unwrap(),
-                                Err(err) => stream
-                                    .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
-                                    .await
-                                    .unwrap(),
-                            },
+                        let actions = Self::action(db.clone(), decoded_word).await;
+                        match actions {
+                            Ok(action_word) => {
+                                for action in action_word {
+                                    trace!("Action to perform: {:?}", action);
+                                    match RespParser::encode(action) {
+                                        Ok(reply) => {
+                                            trace!("Bytes to send: {:?}", reply);
+                                            stream.write_all(reply.as_ref()).await.unwrap()},
+                                        Err(err) => stream
+                                            .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
+                                            .await
+                                            .unwrap(),
+                                    }
+                                }
+                            }
                             // stream.write_all(reply.as_ref()).await.unwrap(),
                             Err(err) => stream
                                 .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
