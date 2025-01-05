@@ -116,7 +116,15 @@ impl RedisServer {
         )?;
         Self::_send_msg(&mut stream, &psync.as_ref()).await?;
         match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-            Operation::Ok => debug!("Replica state synchronization successfully initiated"),
+            Operation::Nil => debug!("Replica state resynchronization details successfully shared"),
+            Operation::Error(err) => error!("Failed to share replica resynchronization details. {}", err),
+            _ => {
+                return Err(RedisError::UnknownResponse)
+            }
+        }
+
+        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
+            Operation::RdbFile(val) => debug!("Replica state synchronization successfully initiated"),
             Operation::Error(err) => error!("Failed to initiate replica state synchronization. {}", err),
             _ => {
                 return Err(RedisError::UnknownResponse)
@@ -148,7 +156,7 @@ impl RedisServer {
     async fn action(db: Arc<RedisState>, word: Operation) -> Result<Vec<Operation>, RedisError> {
         let mut actions: Vec<Operation> = Vec::new();
         match word {
-            Operation::Ping => actions.push(Operation::Echo("PONG".to_string())),
+            Operation::Ping => actions.push(Operation::EchoString("PONG".to_string())),
             Operation::Echo(_) => actions.push(word),
             Operation::ReplicaConf(_) => actions.push(Operation::Ok),  // TODO: Parse later.
             Operation::Psync(val) => {

@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use log::trace;
 use core::str;
 use std::{
     alloc::System,
@@ -9,7 +10,7 @@ use std::{
 };
 
 use crate::{
-    Operation, config::ConfigPair, info::InfoOperation, ConfigOperation, ConfigParam, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs, error::RespError
+    config::ConfigPair, error::RespError, info::InfoOperation, rdb::RdbParser, ConfigOperation, ConfigParam, Operation, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
 };
 
 #[derive(Debug)]
@@ -26,7 +27,7 @@ pub(crate) enum RespType {
     BulkString(String),
     Array(Vec<RespType>),
     Null,
-    NonStandard(String),
+    BulkStringWithoutCRLF(String),
     //     Boolean(bool),
     //     Double(f32),
     //     BigNumber(i128),
@@ -43,29 +44,31 @@ impl RespType {
 
     pub(crate) fn decode(raw: &mut RedisBuffer) -> Result<RespType, RedisError> {
         let type_ch = raw.buffer[raw.index];
+        trace!("RESP Bytes to decode: {:?}", raw.buffer);
         raw.index += 1;
         match type_ch {
             b'+' => Ok(Self::String(Self::decode_string(raw)?)),
             b'-' => Ok(Self::Error(Self::decode_error(raw)?)),
-            b'$' => Ok(Self::BulkString(Self::decode_bulk_string(raw)?)),
+            b'$' => Self::decode_bulk_string(raw),
             b':' => Ok(Self::Integer(Self::decode_integer(raw)?)),
             b'*' => Ok(Self::Array(Self::decode_array(raw)?)),
             b'_' => match Self::decode_null(raw)?.is_none() {
                 true => Ok(Self::Null),
                 false => Err(RedisError::RESP(RespError::InvalidValue)),
             },
-            _ => Ok(Self::NonStandard(Self::decode_nonstandard(raw)?)),
+            _ => Err(RedisError::RESP(RespError::UnknownType)),
         }
     }
 
     pub(crate) fn encode(wtype: RespType) -> Result<Bytes, RedisError> {
+        trace!("RESP Type to encode: {:?}", wtype);
         match wtype {
             Self::String(val) => Self::encode_string(val),
             Self::Integer(val) => Self::encode_integer(val),
             Self::BulkString(val) => Self::encode_bulk_string(val),
             Self::Array(val) => Self::encode_array(val),
             Self::Null => Self::encode_null(),
-            Self::NonStandard(val) => Self::encode_nonstandard(val),
+            Self::BulkStringWithoutCRLF(val) => Self::encode_nonstandard(val),
             _ => Err(RedisError::RESP(RespError::UnsupportedType)),
         }
     }
@@ -75,7 +78,6 @@ impl RespType {
             start: raw.index,
             end: raw.index,
         };
-
         match raw.buffer[raw.index..]
             .windows(2)
             .position(|window| window == Self::CRLF)
@@ -151,19 +153,25 @@ impl RespType {
         Ok(Bytes::from(format!(":{}\r\n", val.to_string())))
     }
 
-    fn decode_bulk_string(raw: &mut RedisBuffer) -> Result<String, RedisError> {
+    fn decode_bulk_string(raw: &mut RedisBuffer) -> Result<Self, RedisError> {
         // Get Bulk String size
         let count = Self::decode_integer(raw)?;
-        let bulk_str_val = Self::_get_value(raw)?;
-        match bulk_str_val {
-            Some(val) => {
+        match Self::_get_value(raw) {
+            Ok(Some(val)) => {
                 if val.end - val.start + 1 != count as usize {
                     return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
                 }
                 let buff_ref = &raw.buffer[val.start..val.end + 1];
-                String::from_utf8(buff_ref.to_vec()).map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))
+                Ok(Self::BulkString(String::from_utf8(buff_ref.to_vec()).map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))?))
             }
-            None => Ok(String::from("")),
+            Ok(None) => Ok(Self::BulkString("".to_string())),
+            Err(RedisError::RESP(RespError::CRLFMissing)) => {
+                if raw.buffer[raw.index..].len() != count as usize {
+                    return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
+                }
+                Ok(Self::BulkStringWithoutCRLF(String::from_utf8(raw.buffer[raw.index..].to_vec()).map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))?))
+            },
+            Err(_) => Err(RedisError::ParsingError),
         }
     }
 
@@ -342,7 +350,7 @@ mod redis_resp_type {
         };
         buff.index += 1;
         let bulk_str_val = RespType::decode_bulk_string(&mut buff).unwrap();
-        assert_eq!(bulk_str_val, "hello");
+        assert_eq!(bulk_str_val, RespType::BulkString("hello".to_string()));
 
         buff.index = 0;
 
@@ -353,7 +361,7 @@ mod redis_resp_type {
         empty_buff.index += 1;
         let empty_val = RespType::decode_bulk_string(&mut empty_buff);
         assert!(empty_val.is_ok());
-        assert_eq!(empty_val.unwrap(), "");
+        assert_eq!(empty_val.unwrap(), RespType::BulkString("".to_string()));
     }
 
     #[test]

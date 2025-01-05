@@ -1,5 +1,7 @@
 use std::{io::Cursor, time::{Duration, SystemTime, UNIX_EPOCH}};
 
+use log::trace;
+
 use crate::{
     config::{ConfigOperation, ConfigPair, ConfigParam}, error::RedisError, error::RDBError, info::{InfoOperation, ReplicationInfo}, rdb::RdbParser, resp::RespType, state::{SetExpiryArgs, SetMap, SetOverwriteArgs}, RedisBuffer
 };
@@ -344,14 +346,24 @@ impl Operation {
     pub(crate) fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
         // println!("Word: {:?}", word);
         // println!("Buffer: {:?}", raw.buffer);
+        trace!("RESP type to decode: {:?}", word);
         match word {
-            RespType::String(res) => {
-                match res.to_lowercase().as_str() {
-                    "ok" => Ok(Self::Ok),
-                    "pong" => Ok(Self::Ok),
-                    _ => Err(RedisError::UnknownCommand)               }
+            RespType::String(res) => match res.to_lowercase().as_str() {
+                "ok" => Ok(Self::Ok),
+                "pong" => Ok(Self::Ok),
+                val if val.starts_with("fullresync") => Ok(Self::Nil),
+                _ => Err(RedisError::UnknownCommand)
             },
             RespType::BulkString(res) => Err(RedisError::UnknownCommand),
+            RespType::BulkStringWithoutCRLF(res) => {
+                let mut cursor = Cursor::new(hex::decode(res).map_err(|err| RedisError::InvalidArgValue(format!("err: {:?}", err)))?);
+                match RdbParser::decode(&mut cursor) {  
+                    Ok(parser) => Ok(Self::RdbFile(parser)),
+                    Err(err) => {
+                        print!("{:?}", err);
+                        Err(RedisError::RDB(RDBError::MissingBytes))},
+                }
+            },
             RespType::Error(err) => Ok(Self::Error(err)),
             RespType::Integer(_) => Err(RedisError::UnknownCommand),
             RespType::Array(res) => match &res[0] {
@@ -375,20 +387,12 @@ impl Operation {
                 },
                 _ => Err(RedisError::UnknownCommand),
             },
-            RespType::NonStandard(val) => {
-                let mut cursor = Cursor::new(val);
-                match RdbParser::decode(&mut cursor) {  
-                    Ok(parser) => Ok(Self::RdbFile(parser)),
-                    Err(err) => {
-                        print!("{:?}", err);
-                        Err(RedisError::RDB(RDBError::MissingBytes))},
-                }
-            },
             RespType::Null => Err(RedisError::UnknownCommand),
         }
     }
 
     pub(crate) fn encode(word: Self) -> Result<RespType, RedisError> {
+        trace!("Operation to encode: {:?}", word);
         match word {
             Operation::Ping => Ok(RespType::Array(vec![RespType::BulkString("PING".to_string())])),
             Operation::ReplicaConf(conf) => {
@@ -417,7 +421,7 @@ impl Operation {
             ])),
             Operation::Echo(val) => Ok(RespType::BulkString(val)),
             Operation::EchoString(val) => Ok(RespType::String(val)),
-            Operation::EchoRaw(val) => Ok(RespType::NonStandard(val)),
+            // Operation::EchoRaw(val) => Ok(RespType::NonStandard(val)),
             Operation::EchoArray(val) => {
                 let mut arr: Vec<RespType> = Vec::new();
                 for i in 0..val.len() {
@@ -425,7 +429,7 @@ impl Operation {
                 }
                 Ok(RespType::Array(arr))
             }
-            Operation::Ok => Ok(RespType::BulkString("OK".to_string())),
+            Operation::Ok => Ok(RespType::String("OK".to_string())),
             Operation::Nil => Ok(RespType::Null),
             Operation::Error(val) => Ok(RespType::Error(val)),
             _ => Err(RedisError::UnknownCommand),

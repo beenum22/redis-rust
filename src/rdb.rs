@@ -3,6 +3,8 @@ use std::io::Read;
 use std::str;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use log::trace;
+
 use crate::{Config, Operation, RDBError, RedisError, SetExpiryArgs, SetMap};
 
 const RDB_MAGIC: &[u8] = b"REDIS";
@@ -99,6 +101,7 @@ pub(crate) struct RdbParser {
     pub(crate) dbs: HashMap<u8, RdbSelectDb>,
 }
 
+// TODO: Rename methods.
 impl RdbParser {
     fn _reader_helper<R: Read>(reader: &mut R, buf: &mut [u8]) -> Result<(), RedisError> {
         match reader.read_exact(buf) {
