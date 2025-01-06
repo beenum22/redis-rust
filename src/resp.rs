@@ -27,7 +27,7 @@ pub(crate) enum RespType {
     BulkString(String),
     Array(Vec<RespType>),
     Null,
-    BulkStringWithoutCRLF(String),
+    Bytes(Bytes),
     //     Boolean(bool),
     //     Double(f32),
     //     BigNumber(i128),
@@ -66,7 +66,7 @@ impl RespType {
             Self::String(val) => Self::encode_string(val),
             Self::Integer(val) => Self::encode_integer(val),
             Self::BulkString(val) => Self::encode_bulk_string(val),
-            Self::BulkStringWithoutCRLF(val) => Self::encode_bulkstring_without_crlf(val),
+            Self::Bytes(val) => Self::encode_bulkstring_without_crlf(val),
             Self::Array(val) => Self::encode_array(val),
             Self::Null => Self::encode_null(),
             _ => Err(RedisError::RESP(RespError::UnsupportedType)),
@@ -102,10 +102,9 @@ impl RespType {
     }
 
     // TODO: Refactor and improve parsing here. Too many Vecs in there.
-    fn encode_bulkstring_without_crlf(val: String) -> Result<Bytes, RedisError> {
-        let bytes = val.as_bytes().to_vec();
-        let mut bytes_len = format!("${}\r\n", bytes.len()).as_bytes().to_vec();
-        bytes_len.extend(bytes); 
+    fn encode_bulkstring_without_crlf(val: Bytes) -> Result<Bytes, RedisError> {
+        let mut bytes_len = format!("${}\r\n", val.len()).as_bytes().to_vec();
+        bytes_len.extend(val); 
         Ok(Bytes::from(bytes_len))
     }
 
@@ -169,7 +168,7 @@ impl RespType {
                 if raw.buffer[raw.index..].len() != count as usize {
                     return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
                 }
-                Ok(Self::BulkStringWithoutCRLF(String::from_utf8_lossy(&raw.buffer[raw.index..]).to_string()))
+                Ok(Self::Bytes(Bytes::from(raw.buffer[raw.index..].to_vec())))
             },
             Err(_) => Err(RedisError::ParsingError),
         }

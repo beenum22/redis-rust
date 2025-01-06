@@ -774,7 +774,7 @@ mod rdb_parser {
 
         // Testcase for valid RDB with keys and no expiries
         let valid_parser = RdbParser::decode(&mut Cursor::new(
-            b"REDIS0003\xFA\x03foo\x03bar\xFE\x00\x00\x03bar\x03foo\xFF",
+            b"REDIS0010\xFA\x03foo\x03bar\xFE\x00\x00\x03bar\x03foo\xFF",
         ));
         assert!(valid_parser.is_ok());
         let parser = valid_parser.unwrap();

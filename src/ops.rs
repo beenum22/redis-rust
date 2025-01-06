@@ -1,4 +1,5 @@
 use std::{io::Cursor, time::{Duration, SystemTime, UNIX_EPOCH}};
+use bytes::Bytes;
 
 use log::trace;
 
@@ -34,7 +35,7 @@ pub(crate) enum Operation {
     Psync(Psync),
     Echo(String),
     EchoString(String),
-    EchoRaw(String),
+    EchoBytes(Bytes),
     Set(SetMap),
     Get(String),
     Config(Vec<ConfigOperation>),
@@ -355,7 +356,7 @@ impl Operation {
                 _ => Err(RedisError::UnknownCommand)
             },
             RespType::BulkString(res) => Err(RedisError::UnknownCommand),
-            RespType::BulkStringWithoutCRLF(res) => {
+            RespType::Bytes(res) => {
                 let mut cursor = Cursor::new(res);
                 match RdbParser::decode(&mut cursor) {  
                     Ok(parser) => Ok(Self::RdbFile(parser)),
@@ -421,7 +422,7 @@ impl Operation {
             ])),
             Operation::Echo(val) => Ok(RespType::BulkString(val)),
             Operation::EchoString(val) => Ok(RespType::String(val)),
-            Operation::EchoRaw(val) => Ok(RespType::BulkStringWithoutCRLF(val)),
+            Operation::EchoBytes(val) => Ok(RespType::Bytes(val)),
             Operation::EchoArray(val) => {
                 let mut arr: Vec<RespType> = Vec::new();
                 for i in 0..val.len() {
