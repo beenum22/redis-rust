@@ -23,7 +23,6 @@ impl ReplicationInfo {
             "\n".to_string(),
         ]
     }
-    
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -34,7 +33,7 @@ pub(crate) struct ServerInfo {
 impl ServerInfo {
     pub(crate) fn new() -> Self {
         ServerInfo {
-            redis_version: "7.2.6".to_string()
+            redis_version: "7.2.6".to_string(),
         }
     }
 
@@ -63,7 +62,7 @@ impl Info {
     pub(crate) fn new(role: String) -> Self {
         Self {
             replication: ReplicationInfo::new(role),
-            server: ServerInfo::new()
+            server: ServerInfo::new(),
         }
     }
 }

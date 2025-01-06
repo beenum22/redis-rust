@@ -1,10 +1,20 @@
-use std::{io::Cursor, time::{Duration, SystemTime, UNIX_EPOCH}};
 use bytes::Bytes;
+use std::{
+    io::Cursor,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use log::trace;
 
 use crate::{
-    config::{ConfigOperation, ConfigPair, ConfigParam}, error::RedisError, error::RDBError, info::{InfoOperation, ReplicationInfo}, rdb::RdbParser, resp::RespType, state::{SetExpiryArgs, SetMap, SetOverwriteArgs}, RedisBuffer
+    config::{ConfigOperation, ConfigPair, ConfigParam},
+    error::RDBError,
+    error::RedisError,
+    info::{InfoOperation, ReplicationInfo},
+    rdb::RdbParser,
+    resp::RespType,
+    state::{SetExpiryArgs, SetMap, SetOverwriteArgs},
+    RedisBuffer,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -16,7 +26,7 @@ pub(crate) enum ReplicaConfigOperation {
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct Psync {
     pub(crate) replication_id: String,
-    pub(crate) offset: i16
+    pub(crate) offset: i16,
 }
 
 impl Psync {
@@ -258,12 +268,10 @@ impl Operation {
                         _ => return Err(RedisError::InvalidValueType),
                     }),
                     "dbfilename" => ConfigParam::DbFileName(match &pair[1] {
-                        RespType::BulkString(val_str) => {
-                            Some(ConfigPair {
-                                key: key_str.to_string(),
-                                value: val_str.to_string(),
-                            })
-                        }
+                        RespType::BulkString(val_str) => Some(ConfigPair {
+                            key: key_str.to_string(),
+                            value: val_str.to_string(),
+                        }),
                         _ => return Err(RedisError::InvalidValueType),
                     }),
                     _ => continue,
@@ -327,11 +335,13 @@ impl Operation {
                         replconf.push(ReplicaConfigOperation::Capabilities(val.to_owned()));
                     } else if key == "listening-port" {
                         replconf.push(ReplicaConfigOperation::ListeningPort(
-                            val.as_str().parse::<u16>().map_err(|_| RedisError::ParsingError)?
+                            val.as_str()
+                                .parse::<u16>()
+                                .map_err(|_| RedisError::ParsingError)?,
                         ));
                     }
-                },
-                _ => ()
+                }
+                _ => (),
             }
         }
         Ok(replconf)
@@ -339,8 +349,13 @@ impl Operation {
 
     fn decode_psync(args: &[RespType]) -> Result<Psync, RedisError> {
         match (&args[0], &args[1]) {
-            (RespType::BulkString(key), RespType::BulkString(val)) => Ok(Psync::new(key.to_string(), val.as_str().parse::<i16>().map_err(|_| RedisError::ParsingError)?)),
-            _ => return Err(RedisError::InvalidValueType)
+            (RespType::BulkString(key), RespType::BulkString(val)) => Ok(Psync::new(
+                key.to_string(),
+                val.as_str()
+                    .parse::<i16>()
+                    .map_err(|_| RedisError::ParsingError)?,
+            )),
+            _ => return Err(RedisError::InvalidValueType),
         }
     }
 
@@ -353,18 +368,19 @@ impl Operation {
                 "ok" => Ok(Self::Ok),
                 "pong" => Ok(Self::Ok),
                 val if val.starts_with("fullresync") => Ok(Self::Nil),
-                _ => Err(RedisError::UnknownCommand)
+                _ => Err(RedisError::UnknownCommand),
             },
             RespType::BulkString(res) => Err(RedisError::UnknownCommand),
             RespType::Bytes(res) => {
                 let mut cursor = Cursor::new(res);
-                match RdbParser::decode(&mut cursor) {  
+                match RdbParser::decode(&mut cursor) {
                     Ok(parser) => Ok(Self::RdbFile(parser)),
                     Err(err) => {
                         print!("{:?}", err);
-                        Err(RedisError::RDB(RDBError::MissingBytes))},
+                        Err(RedisError::RDB(RDBError::MissingBytes))
+                    }
                 }
-            },
+            }
             RespType::Error(err) => Ok(Self::Error(err)),
             RespType::Integer(_) => Err(RedisError::UnknownCommand),
             RespType::Array(res) => match &res[0] {
@@ -395,7 +411,9 @@ impl Operation {
     pub(crate) fn encode(word: Self) -> Result<RespType, RedisError> {
         trace!("Operation to encode: {:?}", word);
         match word {
-            Operation::Ping => Ok(RespType::Array(vec![RespType::BulkString("PING".to_string())])),
+            Operation::Ping => Ok(RespType::Array(vec![RespType::BulkString(
+                "PING".to_string(),
+            )])),
             Operation::ReplicaConf(conf) => {
                 let mut arr: Vec<RespType> = Vec::new();
                 if conf.len() > 0 {
@@ -414,7 +432,7 @@ impl Operation {
                     }
                 }
                 Ok(RespType::Array(arr))
-            },
+            }
             Operation::Psync(val) => Ok(RespType::Array(vec![
                 RespType::BulkString("PSYNC".to_string()),
                 RespType::BulkString(val.replication_id),
@@ -437,4 +455,3 @@ impl Operation {
         }
     }
 }
-

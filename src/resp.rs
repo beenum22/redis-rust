@@ -1,6 +1,6 @@
 use bytes::Bytes;
-use log::trace;
 use core::str;
+use log::trace;
 use std::{
     alloc::System,
     collections::HashMap,
@@ -10,7 +10,8 @@ use std::{
 };
 
 use crate::{
-    config::ConfigPair, error::RespError, info::InfoOperation, rdb::RdbParser, ConfigOperation, ConfigParam, Operation, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
+    config::ConfigPair, error::RespError, info::InfoOperation, rdb::RdbParser, ConfigOperation,
+    ConfigParam, Operation, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs,
 };
 
 #[derive(Debug)]
@@ -104,7 +105,7 @@ impl RespType {
     // TODO: Refactor and improve parsing here. Too many Vecs in there.
     fn encode_bulkstring_without_crlf(val: Bytes) -> Result<Bytes, RedisError> {
         let mut bytes_len = format!("${}\r\n", val.len()).as_bytes().to_vec();
-        bytes_len.extend(val); 
+        bytes_len.extend(val);
         Ok(Bytes::from(bytes_len))
     }
 
@@ -113,7 +114,8 @@ impl RespType {
         match value_index {
             Some(index) => {
                 let buff_ref = &raw.buffer[index.start..index.end + 1];
-                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
+                String::from_utf8(buff_ref.to_vec())
+                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
             }
             None => Err(RedisError::RESP(RespError::InvalidValue)),
         }
@@ -128,7 +130,8 @@ impl RespType {
         match Self::_get_value(raw)? {
             Some(index) => {
                 let buff_ref = &raw.buffer[index.start..index.end + 1];
-                String::from_utf8(buff_ref.to_vec()).map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
+                String::from_utf8(buff_ref.to_vec())
+                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
             }
             None => Err(RedisError::RESP(RespError::InvalidValue)),
         }
@@ -161,7 +164,10 @@ impl RespType {
                     return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
                 }
                 let buff_ref = &raw.buffer[val.start..val.end + 1];
-                Ok(Self::BulkString(String::from_utf8(buff_ref.to_vec()).map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))?))
+                Ok(Self::BulkString(
+                    String::from_utf8(buff_ref.to_vec())
+                        .map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))?,
+                ))
             }
             Ok(None) => Ok(Self::BulkString("".to_string())),
             Err(RedisError::RESP(RespError::CRLFMissing)) => {
@@ -169,7 +175,7 @@ impl RespType {
                     return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
                 }
                 Ok(Self::Bytes(Bytes::from(raw.buffer[raw.index..].to_vec())))
-            },
+            }
             Err(_) => Err(RedisError::ParsingError),
         }
     }

@@ -12,21 +12,21 @@ use tokio::sync::RwLock;
 
 mod config;
 mod error;
+mod info;
+mod ops;
 mod rdb;
 mod resp;
 mod server;
 mod state;
-mod info;
-mod ops;
 
 use config::{Config, ConfigOperation, ConfigParam};
 use error::{RDBError, RedisError};
+use info::{Info, InfoOperation, ReplicationInfo};
+use ops::Operation;
 use rdb::RdbParser;
 use resp::{RespParser, RespType};
-use ops::Operation;
 use server::RedisServer;
 use state::{RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
-use info::{Info, ReplicationInfo, InfoOperation};
 
 struct RedisBuffer {
     index: usize,
@@ -57,13 +57,7 @@ struct Cli {
 
 fn setup_logger(log_level: LevelFilter) -> Result<(), fern::InitError> {
     fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{}] {}",
-                record.level(),
-                message
-            ))
-        })
+        .format(|out, message, record| out.finish(format_args!("[{}] {}", record.level(), message)))
         .level(log_level)
         .chain(std::io::stdout())
         .chain(fern::log_file("output.log")?)
@@ -89,6 +83,12 @@ async fn main() {
 
     setup_logger(log_level).unwrap();
 
-    let redis_server = RedisServer::new(args.host.as_str(), args.port, args.dir, args.dbfilename, args.replicaof);
+    let redis_server = RedisServer::new(
+        args.host.as_str(),
+        args.port,
+        args.dir,
+        args.dbfilename,
+        args.replicaof,
+    );
     redis_server.run().await
 }

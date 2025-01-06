@@ -33,7 +33,7 @@ impl Config {
             dbfilename: Some(ConfigPair {
                 key: "dbfilename".to_string(),
                 value: dbfilename,
-            })
+            }),
         }
     }
 }
