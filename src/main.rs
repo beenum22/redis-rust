@@ -26,7 +26,7 @@ use ops::Operation;
 use rdb::RdbParser;
 use resp::{RespParser, RespType};
 use server::RedisServer;
-use state::{RedisState, SetExpiryArgs, SetMap, SetOverwriteArgs};
+use state::{State, SetExpiryArgs, SetMap, SetOverwriteArgs};
 
 struct RedisBuffer {
     index: usize,

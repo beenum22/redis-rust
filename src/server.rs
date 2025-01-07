@@ -17,12 +17,12 @@ use crate::info::{ReplicationInfo, ServerInfo};
 use crate::ops::{Psync, ReplicaConfigOperation};
 use crate::{
     Config, ConfigOperation, ConfigParam, InfoOperation, Operation, RDBError, RdbParser,
-    RedisBuffer, RedisError, RedisState, RespParser, SetOverwriteArgs,
+    RedisBuffer, RedisError, State, RespParser, SetOverwriteArgs,
 };
 
 pub(crate) struct RedisServer {
     host: SocketAddr,
-    db: Arc<RedisState>,
+    db: Arc<State>,
     replica_of: Option<SocketAddr>,
 }
 
@@ -58,7 +58,7 @@ impl RedisServer {
                 .expect("Invalid socket address")
                 .next()
                 .unwrap(),
-            db: Arc::new(RedisState::new(dir, dbfilename, role)),
+            db: Arc::new(State::new(dir, dbfilename, role)),
             replica_of: remote_server,
         }
     }
@@ -147,9 +147,9 @@ impl RedisServer {
     }
 
     // TODO: Load only if the file exists
-    async fn load_rdb(db: Arc<RedisState>) -> Result<(), RedisError> {
-        let dir = RedisState::get_config_dir(db.config.clone()).await?.value;
-        let dbfilename = RedisState::get_config_dbfilename(db.config.clone())
+    async fn load_rdb(db: Arc<State>) -> Result<(), RedisError> {
+        let dir = State::get_config_dir(db.config.clone()).await?.value;
+        let dbfilename = State::get_config_dbfilename(db.config.clone())
             .await?
             .value;
         let mut db_file = File::open(format!("{}/{}", dir, dbfilename))
@@ -165,7 +165,7 @@ impl RedisServer {
         Ok(())
     }
 
-    async fn action(db: Arc<RedisState>, word: Operation) -> Result<Vec<Operation>, RedisError> {
+    async fn action(db: Arc<State>, word: Operation) -> Result<Vec<Operation>, RedisError> {
         let mut actions: Vec<Operation> = Vec::new();
         match word {
             Operation::Ping => actions.push(Operation::EchoString("PONG".to_string())),
@@ -173,7 +173,7 @@ impl RedisServer {
             Operation::ReplicaConf(_) => actions.push(Operation::Ok), // TODO: Parse later.
             Operation::Psync(val) => match (val.replication_id.as_str(), val.offset as i16) {
                 ("?", -1) => {
-                    let info = RedisState::get_info(db.info.clone()).await?;
+                    let info = State::get_info(db.info.clone()).await?;
                     actions.push(Operation::EchoString(format!(
                         "FULLRESYNC {} {}",
                         info.replication.master_replid, info.replication.master_repl_offset
@@ -184,11 +184,11 @@ impl RedisServer {
             },
             Operation::Set(set_args) => match &set_args.overwrite {
                 Some(val) => {
-                    let key_state = RedisState::get_key(db.state.clone(), &set_args.key).await?;
+                    let key_state = State::get_key(db.state.clone(), &set_args.key).await?;
                     match val {
                         SetOverwriteArgs::NX => {
                             if key_state.is_none() {
-                                RedisState::set_key(
+                                State::set_key(
                                     db.state.clone(),
                                     set_args.key.clone(),
                                     set_args,
@@ -201,7 +201,7 @@ impl RedisServer {
                         }
                         SetOverwriteArgs::XX => {
                             if key_state.is_some() {
-                                RedisState::set_key(
+                                State::set_key(
                                     db.state.clone(),
                                     set_args.key.clone(),
                                     set_args,
@@ -215,12 +215,12 @@ impl RedisServer {
                     }
                 }
                 None => {
-                    RedisState::set_key(db.state.clone(), set_args.key.clone(), set_args).await?;
+                    State::set_key(db.state.clone(), set_args.key.clone(), set_args).await?;
                     actions.push(Operation::Ok)
                 }
             },
             Operation::Get(val) => {
-                match RedisState::get_key(db.state.clone(), &val).await? {
+                match State::get_key(db.state.clone(), &val).await? {
                     Some(value_map) => {
                         // println!("Debug SetMap {:?}", value_map);
                         debug!("Debug SetMap {:?}", value_map);
@@ -230,7 +230,7 @@ impl RedisServer {
                                 match now > expiry {
                                     false => actions.push(Operation::Echo(value_map.val.clone())),
                                     true => {
-                                        RedisState::get_key(db.state.clone(), &val).await?;
+                                        State::get_key(db.state.clone(), &val).await?;
                                         actions.push(Operation::Nil)
                                     }
                                 }
@@ -252,7 +252,7 @@ impl RedisServer {
                             match &val_arr[i] {
                                 ConfigOperation::Get(config_param) => match config_param {
                                     ConfigParam::Dir(_) => {
-                                        match RedisState::get_config_dir(db.config.clone()).await {
+                                        match State::get_config_dir(db.config.clone()).await {
                                             Ok(value) => {
                                                 config_arr
                                                     .push(Operation::Echo(value.key.to_string()));
@@ -263,7 +263,7 @@ impl RedisServer {
                                         }
                                     }
                                     ConfigParam::DbFileName(_) => {
-                                        match RedisState::get_config_dbfilename(db.config.clone())
+                                        match State::get_config_dbfilename(db.config.clone())
                                             .await
                                         {
                                             Ok(value) => {
@@ -287,14 +287,14 @@ impl RedisServer {
                             match &val_arr[i] {
                                 ConfigOperation::Set(config_param) => match config_param {
                                     ConfigParam::Dir(val) => {
-                                        RedisState::set_config_dir(
+                                        State::set_config_dir(
                                             db.config.clone(),
                                             val.clone().unwrap().value.clone(),
                                         )
                                         .await?;
                                     }
                                     ConfigParam::DbFileName(val) => {
-                                        RedisState::set_config_dbfilename(
+                                        State::set_config_dbfilename(
                                             db.config.clone(),
                                             val.clone().unwrap().value.clone(),
                                         )
@@ -313,12 +313,12 @@ impl RedisServer {
                 let mut arr: Vec<Operation> = Vec::new();
                 match key.as_str() {
                     "*" => {
-                        for k in RedisState::get_all_keys(db.state.clone()).await? {
+                        for k in State::get_all_keys(db.state.clone()).await? {
                             arr.push(Operation::Echo(k))
                         }
                     }
                     _ => {
-                        if RedisState::has_key(db.state.clone(), &key).await? {
+                        if State::has_key(db.state.clone(), &key).await? {
                             arr.push(Operation::Echo(key))
                         }
                     }
@@ -327,7 +327,7 @@ impl RedisServer {
             }
             Operation::Info(val) => {
                 let mut arr: Vec<String> = Vec::new();
-                let info: crate::info::Info = RedisState::get_info(db.info.clone()).await?;
+                let info: crate::info::Info = State::get_info(db.info.clone()).await?;
                 for i in 0..val.len() {
                     match &val[i] {
                         InfoOperation::Replication => {
@@ -346,7 +346,7 @@ impl RedisServer {
         Ok(actions)
     }
 
-    async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<RedisState>) -> () {
+    async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<State>) -> () {
         tokio::spawn(async move {
             loop {
                 let mut buff = match Self::_receive_msg(&mut stream).await {

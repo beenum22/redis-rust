@@ -18,13 +18,13 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub(crate) struct RedisState {
+pub(crate) struct State {
     pub(crate) state: Arc<RwLock<HashMap<String, SetMap>>>,
     pub(crate) config: Arc<RwLock<Config>>,
     pub(crate) info: Arc<RwLock<Info>>,
 }
 
-impl RedisState {
+impl State {
     pub(crate) fn new(dir: String, dbfilename: String, role: String) -> Self {
         Self {
             state: Arc::new(RwLock::new(HashMap::new())),
@@ -163,7 +163,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_new() {
-        let redis_state = RedisState::new(
+        let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
@@ -180,13 +180,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_config_dir() {
-        let redis_state = RedisState::new(
+        let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
         );
         assert_eq!(
-            RedisState::get_config_dir(redis_state.config.clone())
+            State::get_config_dir(redis_state.config.clone())
                 .await
                 .unwrap()
                 .value,
@@ -196,13 +196,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_config_dbfilename() {
-        let redis_state = RedisState::new(
+        let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
         );
         assert_eq!(
-            RedisState::get_config_dbfilename(redis_state.config.clone())
+            State::get_config_dbfilename(redis_state.config.clone())
                 .await
                 .unwrap()
                 .value,
@@ -212,15 +212,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_set_config_dir() {
-        let redis_state = RedisState::new(
+        let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
         );
-        RedisState::set_config_dir(redis_state.config.clone(), "/tmp".to_string())
+        State::set_config_dir(redis_state.config.clone(), "/tmp".to_string())
             .await
             .unwrap();
-        let dir = RedisState::get_config_dir(redis_state.config.clone())
+        let dir = State::get_config_dir(redis_state.config.clone())
             .await
             .unwrap();
         assert_eq!(dir.value, "/tmp".to_string());
@@ -228,15 +228,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_set_config_dbfilename() {
-        let redis_state = RedisState::new(
+        let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
         );
-        RedisState::set_config_dbfilename(redis_state.config.clone(), "dump2.rdb".to_string())
+        State::set_config_dbfilename(redis_state.config.clone(), "dump2.rdb".to_string())
             .await
             .unwrap();
-        let dbfilename = RedisState::get_config_dbfilename(redis_state.config.clone())
+        let dbfilename = State::get_config_dbfilename(redis_state.config.clone())
             .await
             .unwrap();
         assert_eq!(dbfilename.value, "dump2.rdb".to_string());
@@ -244,7 +244,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_info() {
-        let redis_state = RedisState::new(
+        let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
@@ -255,7 +255,7 @@ mod tests {
         let mut info_w = redis_state.info.write().await;
         info_w.server = server.clone();
         drop(info_w);
-        let server_info = RedisState::get_info(redis_state.info.clone())
+        let server_info = State::get_info(redis_state.info.clone())
             .await
             .unwrap();
         assert_eq!(server_info, server_info);
@@ -263,7 +263,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_key() {
-        let redis_state = RedisState::new(
+        let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
@@ -279,7 +279,7 @@ mod tests {
         let mut state_w = redis_state.state.write().await;
         state_w.insert("key".to_string(), set_map.clone());
         drop(state_w);
-        let set_map = RedisState::get_key(redis_state.state.clone(), &"key".to_string())
+        let set_map = State::get_key(redis_state.state.clone(), &"key".to_string())
             .await
             .unwrap();
         assert_eq!(set_map, set_map);
@@ -287,7 +287,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_set_key() {
-        let mut redis_state = RedisState::new(
+        let mut redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
@@ -300,14 +300,14 @@ mod tests {
             keepttl: None,
             expiry_timestamp: None,
         };
-        RedisState::set_key(
+        State::set_key(
             redis_state.state.clone(),
             "key".to_string(),
             set_map.clone(),
         )
         .await
         .unwrap();
-        let set_map = RedisState::get_key(redis_state.state.clone(), &"key".to_string())
+        let set_map = State::get_key(redis_state.state.clone(), &"key".to_string())
             .await
             .unwrap();
         assert_eq!(set_map, set_map);
@@ -315,7 +315,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_unset_key() {
-        let mut redis_state = RedisState::new(
+        let mut redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
@@ -331,12 +331,12 @@ mod tests {
         let mut state_w = redis_state.state.write().await;
         state_w.insert("key".to_string(), set_map.clone());
         drop(state_w);
-        RedisState::unset_key(redis_state.state.clone(), "key".to_string())
+        State::unset_key(redis_state.state.clone(), "key".to_string())
             .await
             .unwrap();
-        let set_map = RedisState::get_key(redis_state.state.clone(), &"key".to_string()).await;
+        let set_map = State::get_key(redis_state.state.clone(), &"key".to_string()).await;
         assert_eq!(
-            RedisState::get_key(redis_state.state.clone(), &"key".to_string())
+            State::get_key(redis_state.state.clone(), &"key".to_string())
                 .await
                 .unwrap(),
             None
@@ -345,7 +345,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_has_key() {
-        let mut redis_state = RedisState::new(
+        let mut redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
@@ -358,7 +358,7 @@ mod tests {
             keepttl: None,
             expiry_timestamp: None,
         };
-        RedisState::set_key(
+        State::set_key(
             redis_state.state.clone(),
             "key".to_string(),
             set_map.clone(),
@@ -366,13 +366,13 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(
-            RedisState::has_key(redis_state.state.clone(), &"key".to_string())
+            State::has_key(redis_state.state.clone(), &"key".to_string())
                 .await
                 .unwrap(),
             true
         );
         assert_eq!(
-            RedisState::has_key(redis_state.state.clone(), &"bar".to_string())
+            State::has_key(redis_state.state.clone(), &"bar".to_string())
                 .await
                 .unwrap(),
             false
@@ -381,7 +381,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_keys() {
-        let mut redis_state = RedisState::new(
+        let mut redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
@@ -394,7 +394,7 @@ mod tests {
             keepttl: None,
             expiry_timestamp: None,
         };
-        RedisState::set_key(
+        State::set_key(
             redis_state.state.clone(),
             "foo".to_string(),
             SetMap {
@@ -408,7 +408,7 @@ mod tests {
         )
         .await
         .unwrap();
-        RedisState::set_key(
+        State::set_key(
             redis_state.state.clone(),
             "key".to_string(),
             SetMap {
@@ -422,7 +422,7 @@ mod tests {
         )
         .await
         .unwrap();
-        let keys = RedisState::get_all_keys(redis_state.state.clone())
+        let keys = State::get_all_keys(redis_state.state.clone())
             .await
             .unwrap();
         assert_eq!(keys, vec!["key".to_string(), "foo".to_string()]);
