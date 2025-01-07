@@ -360,8 +360,6 @@ impl Operation {
     }
 
     pub(crate) fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
-        // println!("Word: {:?}", word);
-        // println!("Buffer: {:?}", raw.buffer);
         trace!("RESP type to decode: {:?}", word);
         match word {
             RespType::String(res) => match res.to_lowercase().as_str() {

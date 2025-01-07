@@ -113,7 +113,7 @@ impl RdbParser {
         }
     }
 
-    fn _verify_magic<R: Read>(reader: &mut R) -> Result<(), RedisError> {
+    fn decode_magic<R: Read>(reader: &mut R) -> Result<(), RedisError> {
         let mut magic = [0u8; 5];
         match reader.read(&mut magic) {
             Ok(5) => {
@@ -126,7 +126,7 @@ impl RdbParser {
         Ok(())
     }
 
-    fn _verify_version<R: Read>(reader: &mut R) -> Result<String, RedisError> {
+    fn decode_version<R: Read>(reader: &mut R) -> Result<String, RedisError> {
         let mut buf = [0u8; 4];
         match reader.read(&mut buf) {
             Ok(4) => {
@@ -145,7 +145,7 @@ impl RdbParser {
         }
     }
 
-    fn _parse_opcode<R: Read>(reader: &mut R) -> Result<RdbOpCode, RedisError> {
+    fn decode_opcode<R: Read>(reader: &mut R) -> Result<RdbOpCode, RedisError> {
         let mut op_buf = [0u8; 1];
         match Self::_reader_helper(reader, &mut op_buf) {
             Ok(_) => Ok(RdbOpCode::parse_opcode(op_buf[0])),
@@ -153,7 +153,7 @@ impl RdbParser {
         }
     }
 
-    fn _parse_db<R: Read>(reader: &mut R) -> Result<u8, RedisError> {
+    fn decode_db<R: Read>(reader: &mut R) -> Result<u8, RedisError> {
         let mut db_buf = [0u8; 1];
         match Self::_reader_helper(reader, &mut db_buf) {
             Ok(_) => Ok(db_buf[0]),
@@ -350,19 +350,19 @@ impl RdbParser {
     }
 
     pub fn decode<R: Read>(reader: &mut R) -> Result<RdbParser, RedisError> {
-        Self::_verify_magic(reader)?;
+        Self::decode_magic(reader)?;
         let mut parser = Self {
-            version: Self::_verify_version(reader)?,
+            version: Self::decode_version(reader)?,
             aux_keys: Vec::new(),
             dbs: HashMap::new(),
         };
 
         let mut select_db: Option<u8> = None;
         loop {
-            match Self::_parse_opcode(reader) {
+            match Self::decode_opcode(reader) {
                 Ok(RdbOpCode::EOF) => break,
                 Ok(RdbOpCode::SELECTDB) => {
-                    select_db = Some(Self::_parse_db(reader)?);
+                    select_db = Some(Self::decode_db(reader)?);
                     parser.dbs.entry(select_db.unwrap()).or_insert(RdbSelectDb {
                         // aux_keys: Vec::new(),
                         keys: Vec::new(),
@@ -450,44 +450,44 @@ mod rdb_parser {
     }
 
     #[test]
-    fn test_verify_magic() {
-        let invalid_data = RdbParser::_verify_magic(&mut Cursor::new(b"RED"));
+    fn test_decode_magic() {
+        let invalid_data = RdbParser::decode_magic(&mut Cursor::new(b"RED"));
         assert!(invalid_data.is_err());
         assert_eq!(
             invalid_data.unwrap_err(),
             RedisError::RDB(RDBError::MissingBytes)
         );
 
-        let invalid_magic = RdbParser::_verify_magic(&mut Cursor::new(b"FOOBAR"));
+        let invalid_magic = RdbParser::decode_magic(&mut Cursor::new(b"FOOBAR"));
         assert!(invalid_magic.is_err());
         assert_eq!(
             invalid_magic.unwrap_err(),
             RedisError::RDB(RDBError::MissingMagicString)
         );
 
-        let valid_magic = RdbParser::_verify_magic(&mut Cursor::new(b"REDIS0100"));
+        let valid_magic = RdbParser::decode_magic(&mut Cursor::new(b"REDIS0100"));
         assert!(valid_magic.is_ok());
     }
 
     #[test]
-    fn test_verify_version() {
-        let invalid_data = RdbParser::_verify_version(&mut Cursor::new(b"RED"));
+    fn test_decode_version() {
+        let invalid_data = RdbParser::decode_version(&mut Cursor::new(b"RED"));
         assert!(invalid_data.is_err());
         assert_eq!(
             invalid_data.unwrap_err(),
             RedisError::RDB(RDBError::MissingBytes)
         );
 
-        let invalid_ver = RdbParser::_verify_version(&mut Cursor::new(b"0100FOOBAR"));
+        let invalid_ver = RdbParser::decode_version(&mut Cursor::new(b"0100FOOBAR"));
         assert!(invalid_ver.is_err());
         assert_eq!(
             invalid_ver.unwrap_err(),
             RedisError::RDB(RDBError::UnsupportedVersion("100".to_string()))
         );
 
-        let valid_ver = RdbParser::_verify_version(&mut Cursor::new(b"0003FOOBAR"));
+        let valid_ver = RdbParser::decode_version(&mut Cursor::new(b"0010FOOBAR"));
         assert!(valid_ver.is_ok());
-        assert_eq!(valid_ver.unwrap(), "0003".to_string())
+        assert_eq!(valid_ver.unwrap(), "10".to_string())
     }
 
     #[test]
@@ -691,7 +691,7 @@ mod rdb_parser {
 
         // Testcase for invalid version
         let invalid_ver =
-            RdbParser::decode(&mut Cursor::new(b"REDIS0113\xFE\x01\xFA\x03foo\x03bar\xFF"));
+            RdbParser::decode(&mut Cursor::new(b"REDIS0100\xFE\x01\xFA\x03foo\x03bar\xFF"));
         assert!(invalid_ver.is_err());
         assert_eq!(
             invalid_ver.unwrap_err(),
@@ -700,7 +700,7 @@ mod rdb_parser {
 
         // Testcase for missing SelectDB
         let invalid_eof =
-            RdbParser::decode(&mut Cursor::new(b"REDIS0003\xFA\x03foo\x03bar\x03bar")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
+            RdbParser::decode(&mut Cursor::new(b"REDIS0010\xFA\x03foo\x03bar\x03bar")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
         assert!(invalid_eof.is_err());
         assert_eq!(
             invalid_eof.unwrap_err(),
@@ -709,7 +709,7 @@ mod rdb_parser {
 
         // Testcase for missing bytes or invalid EOF
         let invalid_eof =
-            RdbParser::decode(&mut Cursor::new(b"REDIS0003\xFE\x01\xFA\x03foo\x03bar")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
+            RdbParser::decode(&mut Cursor::new(b"REDIS0010\xFE\x01\xFA\x03foo\x03bar")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
         assert!(invalid_eof.is_err());
         assert_eq!(
             invalid_eof.unwrap_err(),
@@ -718,10 +718,10 @@ mod rdb_parser {
 
         // Testcase for valid RDB with only auxiliary keys
         let valid_aux_parser =
-            RdbParser::decode(&mut Cursor::new(b"REDIS0003\xFA\x03foo\x03bar\xFE\x01\xFF")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
+            RdbParser::decode(&mut Cursor::new(b"REDIS0010\xFA\x03foo\x03bar\xFE\x01\xFF")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
         assert!(valid_aux_parser.is_ok());
         let aux_parser = valid_aux_parser.unwrap();
-        assert_eq!(aux_parser.version, "0003".to_string());
+        assert_eq!(aux_parser.version, "10".to_string());
         assert!(aux_parser.dbs.contains_key(&1));
         assert_eq!(
             aux_parser.aux_keys,
@@ -734,11 +734,11 @@ mod rdb_parser {
 
         // Testcase for valid RDB with keys and expiry in seconds
         let valid_parser_sec = RdbParser::decode(&mut Cursor::new(
-            b"REDIS0003\xFA\x03foo\x03bar\xFE\x00\xFD\x61\x56\x4F\x80\x00\x03bar\x03foo\xFF",
+            b"REDIS0010\xFA\x03foo\x03bar\xFE\x00\xFD\x61\x56\x4F\x80\x00\x03bar\x03foo\xFF",
         ));
         assert!(valid_parser_sec.is_ok());
         let parser = valid_parser_sec.unwrap();
-        assert_eq!(parser.version, "0003".to_string());
+        assert_eq!(parser.version, "10".to_string());
         assert!(parser.dbs.contains_key(&0));
         assert_eq!(
             parser.dbs.get(&0).unwrap().keys,
@@ -753,10 +753,10 @@ mod rdb_parser {
         );
 
         // Testcase for valid RDB with keys and expiry in milliseconds
-        let valid_parser_msec = RdbParser::decode(&mut Cursor::new(b"REDIS0003\xFA\x03foo\x03bar\xFE\x00\xFC\x00\x00\x01\x7C\x39\x26\x8C\x00\x00\x03bar\x03foo\xFF"));
+        let valid_parser_msec = RdbParser::decode(&mut Cursor::new(b"REDIS0010\xFA\x03foo\x03bar\xFE\x00\xFC\x00\x00\x01\x7C\x39\x26\x8C\x00\x00\x03bar\x03foo\xFF"));
         assert!(valid_parser_msec.is_ok());
         let parser_msec = valid_parser_msec.unwrap();
-        assert_eq!(parser_msec.version, "0003".to_string());
+        assert_eq!(parser_msec.version, "10".to_string());
         assert!(parser_msec.dbs.contains_key(&0));
         assert_eq!(
             parser_msec.dbs.get(&0).unwrap().keys,
@@ -778,7 +778,7 @@ mod rdb_parser {
         ));
         assert!(valid_parser.is_ok());
         let parser = valid_parser.unwrap();
-        assert_eq!(parser.version, "0003".to_string());
+        assert_eq!(parser.version, "10".to_string());
         assert!(parser.dbs.contains_key(&0));
         assert_eq!(
             parser.dbs.get(&0).unwrap().keys,
