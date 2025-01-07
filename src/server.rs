@@ -347,20 +347,17 @@ impl RedisServer {
     }
 
     async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<RedisState>) -> () {
-        // println!("New TCP connection from {:?}", addr);
-        debug!("New TCP connection from {:?}", addr);
         tokio::spawn(async move {
-            let mut raw_buff: [u8; 512] = [0; 512];
             loop {
-                let mut buff = RedisBuffer {
-                    buffer: Bytes::new(),
-                    index: 0,
+                let mut buff = match Self::_receive_msg(&mut stream).await {
+                    Ok(data) => data,
+                    Err(e) => {
+                        error!("Failed to receive message from the TCP stream. {:?}", e);
+                        continue
+                    },
                 };
-                let data = stream.read(&mut raw_buff).await.unwrap();
-                buff.buffer = Bytes::copy_from_slice(&raw_buff[..data]);
 
-                if data == 0 {
-                    // println!("TCP connection from {:?} closed", addr);
+                if buff.buffer.len() == 0 {
                     debug!("TCP connection from {:?} closed", addr);
                     break;
                 }
@@ -385,7 +382,6 @@ impl RedisServer {
                                     }
                                 }
                             }
-                            // stream.write_all(reply.as_ref()).await.unwrap(),
                             Err(err) => stream
                                 .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
                                 .await
@@ -401,17 +397,14 @@ impl RedisServer {
         });
     }
 
-    pub(crate) async fn run(&self) -> () {
+    pub(crate) async fn run(&self) {
         let listener = TcpListener::bind(self.host).await.unwrap();
         info!(
             "Redis Server is running on {}:{}",
             self.host.ip(),
             self.host.port(),
-            // self.addr.to_string(),
-            // self.port
         );
         if let Err(e) = Self::load_rdb(self.db.clone()).await {
-            // println!("Failed to load RDB: {:?}", e);
             warn!("Failed to load RDB: {:?}", e);
         }
 
@@ -426,12 +419,13 @@ impl RedisServer {
         }
 
         loop {
-            let stream = listener.accept().await;
-            match stream {
-                Ok((stream, addr)) => Self::stream_handler(stream, addr, self.db.clone()).await,
+            match listener.accept().await {
+                Ok((stream, addr)) => {
+                    debug!("New TCP connection from {:?}", addr);
+                    Self::stream_handler(stream, addr, self.db.clone()).await
+                },
                 Err(e) => {
-                    // println!("error: {}", e);
-                    error!("error: {}", e);
+                    error!("Failed to accept new TCP connection. {}", e);
                 }
             }
         }
