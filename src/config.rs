@@ -13,9 +13,10 @@ pub(crate) struct ConfigPair {
 
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum ConfigOperation {
-    Get(ConfigParam),
-    Set(ConfigParam),
+    Get(Vec<ConfigParam>),
+    Set(Vec<ConfigParam>),
 }
+
 
 #[derive(Debug)]
 pub(crate) struct Config {

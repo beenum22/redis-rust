@@ -39,16 +39,53 @@ impl Psync {
 }
 
 #[derive(Clone, PartialEq, Debug)]
+pub(crate) enum OperationType {
+    Read,
+    Write,
+    Internal,
+}
+
+impl OperationType {
+    pub(crate) fn get_type(op: &Operation) -> OperationType {
+        match &op {
+            Operation::Ping => OperationType::Read,
+            Operation::ReplicaConf(_) => OperationType::Write,
+            Operation::Psync(_) => OperationType::Write,  // Not sure.
+            Operation::Publish(_) => OperationType::Internal,
+            Operation::Subscribe => OperationType::Internal,
+            Operation::Echo(_) => OperationType::Read,
+            Operation::EchoString(_) => OperationType::Read,
+            Operation::EchoBytes(_) => OperationType::Read,
+            Operation::Set(_) => OperationType::Write,
+            Operation::Get(_) => OperationType::Read,
+            Operation::Config(config) => match config {
+                ConfigOperation::Get(_) => OperationType::Read,
+                ConfigOperation::Set(_) => OperationType::Write,
+            },
+            Operation::Keys(_) => OperationType::Read,
+            Operation::Ok => OperationType::Read,
+            Operation::Nil => OperationType::Read,
+            Operation::EchoArray(_) => OperationType::Read,
+            Operation::Info(_) => OperationType::Read,
+            Operation::RdbFile(_) => OperationType::Internal,
+            Operation::Error(_) => OperationType::Read,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) enum Operation {
     Ping,
     ReplicaConf(Vec<ReplicaConfigOperation>),
     Psync(Psync),
+    Publish(Vec<Operation>),  // Internal operation
+    Subscribe,  // Internal operation
     Echo(String),
     EchoString(String),
     EchoBytes(Bytes),
     Set(SetMap),
     Get(String),
-    Config(Vec<ConfigOperation>),
+    Config(ConfigOperation),
     Keys(String),
     Ok,
     Nil,
@@ -206,6 +243,43 @@ impl Operation {
         Ok(set_args)
     }
 
+    fn encode_set(set_map: SetMap) -> Result<RespType, RedisError> {
+        let mut arr: Vec<RespType> = Vec::new();
+        arr.push(RespType::BulkString("SET".to_string()));
+        arr.push(RespType::BulkString(set_map.key));
+        arr.push(RespType::BulkString(set_map.val));
+        if set_map.overwrite.is_some() {
+            match set_map.overwrite.unwrap() {
+                SetOverwriteArgs::NX => arr.push(RespType::BulkString("NX".to_string())),
+                SetOverwriteArgs::XX => arr.push(RespType::BulkString("XX".to_string())),
+            }
+        }
+        if set_map.expiry.is_some() {
+            match set_map.expiry.unwrap() {
+                SetExpiryArgs::EX(val) => {
+                    arr.push(RespType::BulkString("EX".to_string()));
+                    arr.push(RespType::BulkString(val.to_string()))
+                },
+                SetExpiryArgs::PX(val) => {
+                    arr.push(RespType::BulkString("PX".to_string()));
+                    arr.push(RespType::BulkString(val.to_string()))
+                },
+                SetExpiryArgs::EXAT(val) => {
+                    arr.push(RespType::BulkString("EXAT".to_string()));
+                    arr.push(RespType::BulkString(val.to_string()))
+                },
+                SetExpiryArgs::PXAT(val) => {
+                    arr.push(RespType::BulkString("PXAT".to_string()));
+                    arr.push(RespType::BulkString(val.to_string()))
+                },
+            }
+            if let Some(true) = set_map.keepttl {
+                arr.push(RespType::BulkString("KEEPTTL".to_string()));
+            }
+        }
+        Ok(RespType::Array(arr))
+    }
+
     fn _decode_config_param(val: &RespType) -> Result<ConfigParam, RedisError> {
         match val {
             RespType::BulkString(val_str) => match val_str.to_lowercase().as_str() {
@@ -228,17 +302,31 @@ impl Operation {
         }
     }
 
-    fn _decode_config_get(args: &[RespType]) -> Result<Vec<ConfigOperation>, RedisError> {
+    fn decode_config(args: &[RespType]) -> Result<ConfigOperation, RedisError> {
         if args.len() == 0 {
             return Err(RedisError::MissingArgs);
         };
-        let mut arr: Vec<ConfigOperation> = Vec::new();
+        match &args[0] {
+            RespType::BulkString(val) => match val.to_lowercase().as_str() {
+                "get" => Ok(ConfigOperation::Get(Self::decode_config_get(&args[1..])?)),
+                "set" => Ok(ConfigOperation::Set(Self::decode_config_set(&args[1..])?)),
+                _ => return Err(RedisError::SyntaxError),
+            },
+            _ => return Err(RedisError::InvalidValueType),
+        }
+    }
+
+    fn decode_config_get(args: &[RespType]) -> Result<Vec<ConfigParam>, RedisError> {
+        if args.len() == 0 {
+            return Err(RedisError::MissingArgs);
+        };
+        let mut arr: Vec<ConfigParam> = Vec::new();
         for i in 0..args.len() {
             match &args[i] {
                 RespType::BulkString(val_str) => match val_str.to_lowercase().as_str() {
-                    "dir" => arr.push(ConfigOperation::Get(ConfigParam::Dir(None))),
-                    "dbfilename" => arr.push(ConfigOperation::Get(ConfigParam::DbFileName(None))),
-                    _ => arr.push(ConfigOperation::Get(ConfigParam::Unknown)),
+                    "dir" => arr.push(ConfigParam::Dir(None)),
+                    "dbfilename" => arr.push(ConfigParam::DbFileName(None)),
+                    _ => arr.push(ConfigParam::Unknown),
                 },
                 _ => return Err(RedisError::InvalidValueType),
             }
@@ -246,54 +334,39 @@ impl Operation {
         Ok(arr)
     }
 
-    fn _decode_config_set(args: &[RespType]) -> Result<Vec<ConfigOperation>, RedisError> {
+    fn decode_config_set(args: &[RespType]) -> Result<Vec<ConfigParam>, RedisError> {
         if args.len() == 0 {
             return Err(RedisError::MissingArgs);
         };
-        let mut arr: Vec<ConfigOperation> = Vec::new();
+        let mut arr: Vec<ConfigParam> = Vec::new();
         for pair in args.windows(2) {
             if pair.len() < 2 {
                 return Err(RedisError::SyntaxError);
             }
-            arr.push(ConfigOperation::Set(match &pair[0] {
+            match &pair[0] {
                 RespType::BulkString(key_str) => match key_str.to_lowercase().as_str() {
-                    "dir" => ConfigParam::Dir(match &pair[1] {
+                    "dir" => arr.push(ConfigParam::Dir(match &pair[1] {
                         RespType::BulkString(val_str) => {
-                            // Some((key_str.to_string(), val_str.to_string()))
                             Some(ConfigPair {
                                 key: key_str.to_string(),
                                 value: val_str.to_string(),
                             })
                         }
                         _ => return Err(RedisError::InvalidValueType),
-                    }),
-                    "dbfilename" => ConfigParam::DbFileName(match &pair[1] {
+                    })),
+                    "dbfilename" => arr.push(ConfigParam::DbFileName(match &pair[1] {
                         RespType::BulkString(val_str) => Some(ConfigPair {
                             key: key_str.to_string(),
                             value: val_str.to_string(),
                         }),
                         _ => return Err(RedisError::InvalidValueType),
-                    }),
+                    })),
                     _ => continue,
                 },
                 _ => return Err(RedisError::InvalidValueType),
-            }));
+            };
         }
         Ok(arr)
-    }
-
-    fn _decode_config(args: &[RespType]) -> Result<Vec<ConfigOperation>, RedisError> {
-        if args.len() == 0 {
-            return Err(RedisError::MissingArgs);
-        };
-        match &args[0] {
-            RespType::BulkString(val) => match val.to_lowercase().as_str() {
-                "get" => Self::_decode_config_get(&args[1..]),
-                "set" => Self::_decode_config_set(&args[1..]),
-                _ => return Err(RedisError::SyntaxError),
-            },
-            _ => return Err(RedisError::InvalidValueType),
-        }
     }
 
     fn _decode_get(args: &[RespType]) -> Result<String, RedisError> {
@@ -395,7 +468,8 @@ impl Operation {
                     },
                     "set" => Ok(Self::Set(Self::_decode_set(&res[1..])?)),
                     "get" => Ok(Self::Get(Self::_decode_get(&res[1..])?)),
-                    "config" => Ok(Self::Config(Self::_decode_config(&res[1..])?)),
+                    // "config" => Ok(Self::Config(Self::_decode_config(&res[1..])?)),
+                    "config" => Ok(Self::Config(Self::decode_config(&res[1..])?)),
                     "keys" => Ok(Self::Keys(Self::_decode_keys(&res[1..])?)),
                     "info" => Ok(Self::Info(Self::decode_info(&res[1..])?)),
                     _ => Err(RedisError::UnknownCommand),
@@ -409,6 +483,7 @@ impl Operation {
     pub(crate) fn encode(word: Self) -> Result<RespType, RedisError> {
         trace!("Operation to encode: {:?}", word);
         match word {
+            Operation::Set(val) => Self::encode_set(val),
             Operation::Ping => Ok(RespType::Array(vec![RespType::BulkString(
                 "PING".to_string(),
             )])),

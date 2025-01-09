@@ -1,5 +1,7 @@
 use lzf::LzfError;
 
+use crate::ops::Operation;
+
 #[derive(Debug, PartialEq)]
 pub(crate) enum RedisError {
     ParsingError,
@@ -14,6 +16,7 @@ pub(crate) enum RedisError {
     State(StateError),
     Connection(ConnectionError),
     RESP(RespError),
+    Replica(ReplicaError),
 }
 
 #[derive(Debug, PartialEq)]
@@ -57,4 +60,11 @@ pub(crate) enum RespError {
     IntegerParsingFailed,
     IncorrectBulkStringSize,
     HexDecodingFailed,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum ReplicaError {
+    BroadcastFailed,
+    RegistrationFailed,
+    DeregistrationFailed,
 }

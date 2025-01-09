@@ -82,6 +82,18 @@ impl State {
         Ok(info_ro.clone())
     }
 
+    pub async fn increment_replicas<'a>(info: Arc<RwLock<Info>>) -> Result<u16, RedisError> {
+        let mut info_rw = info.write().await;
+        info_rw.replication.connected_slaves += 1;
+        Ok(info_rw.replication.connected_slaves)
+    }
+
+    pub async fn decrement_replicas<'a>(info: Arc<RwLock<Info>>) -> Result<u16, RedisError> {
+        let mut info_rw = info.write().await;
+        info_rw.replication.connected_slaves -= 1;
+        Ok(info_rw.replication.connected_slaves)
+    }
+
     pub(crate) async fn get_key(
         state: Arc<RwLock<HashMap<String, SetMap>>>,
         key: &String,
@@ -259,6 +271,31 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(server_info, server_info);
+    }
+
+    #[tokio::test]
+    async fn test_increment_replicas() {
+        let redis_state = State::new(
+            "/data".to_string(),
+            "dump.rdb".to_string(),
+            "master".to_string(),
+        );
+        assert_eq!(State::increment_replicas(redis_state.info.clone()).await.unwrap(), 1);
+        assert_eq!(State::increment_replicas(redis_state.info.clone()).await.unwrap(), 2);
+        assert_eq!(State::increment_replicas(redis_state.info.clone()).await.unwrap(), 3);
+    }
+
+    #[tokio::test]
+    async fn test_decrement_replicas() {
+        let redis_state = State::new(
+            "/data".to_string(),
+            "dump.rdb".to_string(),
+            "master".to_string(),
+        );
+        State::increment_replicas(redis_state.info.clone()).await;
+        State::increment_replicas(redis_state.info.clone()).await;
+        assert_eq!(State::decrement_replicas(redis_state.info.clone()).await.unwrap(), 1);
+        assert_eq!(State::decrement_replicas(redis_state.info.clone()).await.unwrap(), 0);
     }
 
     #[tokio::test]

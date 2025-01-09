@@ -10,8 +10,7 @@ use std::{
 };
 
 use crate::{
-    config::ConfigPair, error::RespError, info::InfoOperation, rdb::RdbParser, ConfigOperation,
-    ConfigParam, Operation, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs,
+    config::ConfigPair, error::RespError, info::InfoOperation, rdb::RdbParser, ConfigParam, Operation, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
 };
 
 #[derive(Debug)]
@@ -70,6 +69,7 @@ impl RespType {
             Self::Bytes(val) => Self::encode_bulkstring_without_crlf(val),
             Self::Array(val) => Self::encode_array(val),
             Self::Null => Self::encode_null(),
+            Self::Error(val) => Self::encode_error(val),
             _ => Err(RedisError::RESP(RespError::UnsupportedType)),
         }
     }
@@ -135,6 +135,10 @@ impl RespType {
             }
             None => Err(RedisError::RESP(RespError::InvalidValue)),
         }
+    }
+
+    fn encode_error(val: String) -> Result<Bytes, RedisError> {
+        Ok(Bytes::from(format!("-Err {}\r\n", val)))
     }
 
     fn decode_integer(raw: &mut RedisBuffer) -> Result<i64, RedisError> {

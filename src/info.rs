@@ -1,8 +1,12 @@
+use std::net::SocketAddr;
+
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ReplicationInfo {
     role: String,
     pub(crate) master_replid: String,
     pub(crate) master_repl_offset: i16,
+    pub(crate) connected_slaves: u16,
+    pub(crate) slaves: Vec<SocketAddr>
 }
 
 impl ReplicationInfo {
@@ -11,17 +15,22 @@ impl ReplicationInfo {
             role,
             master_replid: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb".to_string(),
             master_repl_offset: 0,
+            connected_slaves: 0,
+            slaves: Vec::new(),
         }
     }
 
     pub(crate) fn get_all(info: Self) -> Vec<String> {
-        vec![
-            "# Replication".to_string(),
-            format!("role:{}", info.role),
-            format!("master_replid:{}", info.master_replid),
-            format!("master_repl_offset:{}", info.master_repl_offset),
-            "\n".to_string(),
-        ]
+        let mut info_vec = vec!["# Replication".to_string()];
+        info_vec.push(format!("role:{}", info.role));
+        info_vec.push(format!("master_replid:{}", info.master_replid));
+        info_vec.push(format!("master_repl_offset:{}", info.master_repl_offset));
+        info_vec.push(format!("connection_slaves:{}", info.connected_slaves));
+        for i in 0..info.slaves.len() {
+            info_vec.push(format!("slave{}:{}", i, info.slaves[i]));
+        };
+        info_vec.push("\n".to_string(),);
+        info_vec
     }
 }
 

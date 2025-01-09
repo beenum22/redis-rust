@@ -1,5 +1,6 @@
 use bytes::{Bytes, BytesMut};
 use log::{debug, error, info, trace, warn};
+use tokio::sync::broadcast::{channel, Receiver, Sender};
 use std::collections::HashMap;
 use std::env::args;
 use std::fs::File;
@@ -12,18 +13,95 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 use tokio::sync::RwLock;
 
-use crate::error::ConnectionError;
+use crate::error::{ConnectionError, ReplicaError};
 use crate::info::{ReplicationInfo, ServerInfo};
 use crate::ops::{Psync, ReplicaConfigOperation};
+use crate::resp::RespType;
 use crate::{
-    Config, ConfigOperation, ConfigParam, InfoOperation, Operation, RDBError, RdbParser,
+    Config, ConfigParam, InfoOperation, Operation, RDBError, RdbParser,
     RedisBuffer, RedisError, State, RespParser, SetOverwriteArgs,
 };
 
+pub(crate) struct Broadcaster {
+    sender: Sender<Operation>,
+    receiver: Receiver<Operation>,
+}
+
+impl Broadcaster {
+    pub(crate) fn new(channels: usize) -> Self {
+        let (sender, receiver) = channel(channels);
+        Self {
+            sender,
+            receiver,
+        }
+    }
+
+    pub(crate) fn subscribe(&self) -> Receiver<Operation> {
+        self.sender.subscribe()
+    }
+
+    pub(crate) fn publish(&self, op: Operation) -> Result<usize, RedisError> {
+        self.sender.send(op).map_err(|_| RedisError::Replica(ReplicaError::BroadcastFailed))
+    }
+}
+
+enum Node {
+    Master(SocketAddr),
+    Slave(SocketAddr, SocketAddr),
+}
+
+impl Node {
+    fn new(addr: &str, port: u16, replica_of: Option<String>) -> Self {
+        match replica_of {
+            Some(replica) => {
+                let parts: Vec<&str> = replica.split_whitespace().collect();
+                let (host_str, port_str) = (parts[0], parts[1]);
+                Self::Slave(
+                    format!("{addr}:{port}").to_socket_addrs().expect("Invalid socket address").next().unwrap(),
+                    format!("{host_str}:{port_str}").to_socket_addrs().expect("Invalid socket address").next().unwrap()
+                )
+            }
+            None => Self::Master(
+                format!("{addr}:{port}").to_socket_addrs().expect("Invalid socket address").next().unwrap(),
+            ),
+        }
+    }
+
+    fn role(&self) -> String {
+        match self {
+            Node::Master(_) => "master".to_string(),
+            Node::Slave(_, _) => "slave".to_string(),
+        }
+    }
+
+    fn socket(&self) -> SocketAddr {
+        match self {
+            Node::Master(addr) => addr.clone(),
+            Node::Slave(addr, _) => addr.clone(),
+        }
+    }
+
+    fn ip(&self) -> IpAddr {
+        match self {
+            Node::Master(addr) => addr.ip(),
+            Node::Slave(addr, _) => addr.ip(),
+        }
+    }
+
+    fn port(&self) -> u16 {
+        match self {
+            Node::Master(addr) => addr.port(),
+            Node::Slave(addr, _) => addr.port(),
+        }
+    }
+
+
+}
+
 pub(crate) struct RedisServer {
-    host: SocketAddr,
+    node: Node,
     db: Arc<State>,
-    replica_of: Option<SocketAddr>,
+    broadcast: Arc<Broadcaster>,
 }
 
 impl RedisServer {
@@ -34,32 +112,13 @@ impl RedisServer {
         dbfilename: String,
         replica_of: Option<String>,
     ) -> Self {
-        let remote_server: Option<SocketAddr> = match replica_of {
-            Some(replica) => {
-                let parts: Vec<&str> = replica.split_whitespace().collect();
-                let (host_str, port_str) = (parts[0], parts[1]);
-                format!("{host_str}:{port_str}")
-                    .to_socket_addrs()
-                    .expect("Invalid socket address")
-                    .next()
-            }
-            None => None,
-        };
-
-        let role: String = match remote_server {
-            Some(_) => "slave".to_string(),
-            None => "master".to_string(),
-        };
-
+        let node = Node::new(addr, port, replica_of);
+        let role = node.role();
         Self {
             // TODO: Handle Result and Option errors
-            host: format!("{addr}:{port}")
-                .to_socket_addrs()
-                .expect("Invalid socket address")
-                .next()
-                .unwrap(),
+            node,
             db: Arc::new(State::new(dir, dbfilename, role)),
-            replica_of: remote_server,
+            broadcast: Arc::new(Broadcaster::new(16)),
         }
     }
 
@@ -86,7 +145,7 @@ impl RedisServer {
     }
 
     // TODO: All commands are executed serially over one TCP session. Check if separate would be better. You might need to flush the buffer.
-    async fn configure_replica(port: u16, server: SocketAddr) -> Result<(), RedisError> {
+    async fn configure_replica(db: Arc<State>, broadcaster: Arc<Broadcaster>, port: u16, server: SocketAddr) -> Result<(), RedisError> {
         let mut stream = TcpStream::connect(server)
             .await
             .map_err(|_| RedisError::Connection(ConnectionError::FailedToWriteBytes))?;
@@ -142,7 +201,9 @@ impl RedisServer {
             }
             _ => return Err(RedisError::UnknownResponse),
         }
-
+        
+        debug!("Subscribed to the server at {}", server);
+        Self::stream_handler(stream, db, broadcaster).await;
         Ok(())
     }
 
@@ -167,6 +228,7 @@ impl RedisServer {
 
     async fn action(db: Arc<State>, word: Operation) -> Result<Vec<Operation>, RedisError> {
         let mut actions: Vec<Operation> = Vec::new();
+        let propagation_copy = word.clone();
         match word {
             Operation::Ping => actions.push(Operation::EchoString("PONG".to_string())),
             Operation::Echo(_) => actions.push(word),
@@ -179,44 +241,48 @@ impl RedisServer {
                         info.replication.master_replid, info.replication.master_repl_offset
                     )));
                     actions.push(Operation::EchoBytes(Bytes::copy_from_slice(b"REDIS0010\xFA\x03foo\x03bar\xFE\x00\xFD\x61\x56\x4F\x80\x00\x03bar\x03foo\xFF")));
+                    actions.push(Operation::Subscribe);
                 }
                 (_, _) => return Err(RedisError::UnknownConfig),
             },
-            Operation::Set(set_args) => match &set_args.overwrite {
-                Some(val) => {
-                    let key_state = State::get_key(db.state.clone(), &set_args.key).await?;
-                    match val {
-                        SetOverwriteArgs::NX => {
-                            if key_state.is_none() {
-                                State::set_key(
-                                    db.state.clone(),
-                                    set_args.key.clone(),
-                                    set_args,
-                                )
-                                .await?;
-                                actions.push(Operation::Ok)
-                            } else {
-                                actions.push(Operation::Nil)
+            Operation::Set(set_args) => {
+                actions.push(Operation::Publish(vec![propagation_copy]));
+                match &set_args.overwrite {
+                    Some(val) => {
+                        let key_state = State::get_key(db.state.clone(), &set_args.key).await?;
+                        match val {
+                            SetOverwriteArgs::NX => {
+                                if key_state.is_none() {
+                                    State::set_key(
+                                        db.state.clone(),
+                                        set_args.key.clone(),
+                                        set_args,
+                                    )
+                                    .await?;
+                                    actions.push(Operation::Ok)
+                                } else {
+                                    actions.push(Operation::Nil)
+                                }
                             }
-                        }
-                        SetOverwriteArgs::XX => {
-                            if key_state.is_some() {
-                                State::set_key(
-                                    db.state.clone(),
-                                    set_args.key.clone(),
-                                    set_args,
-                                )
-                                .await?;
-                                actions.push(Operation::Ok)
-                            } else {
-                                actions.push(Operation::Nil)
+                            SetOverwriteArgs::XX => {
+                                if key_state.is_some() {
+                                    State::set_key(
+                                        db.state.clone(),
+                                        set_args.key.clone(),
+                                        set_args,
+                                    )
+                                    .await?;
+                                    actions.push(Operation::Ok)
+                                } else {
+                                    actions.push(Operation::Nil)
+                                }
                             }
                         }
                     }
-                }
-                None => {
-                    State::set_key(db.state.clone(), set_args.key.clone(), set_args).await?;
-                    actions.push(Operation::Ok)
+                    None => {
+                        State::set_key(db.state.clone(), set_args.key.clone(), set_args).await?;
+                        actions.push(Operation::Ok)
+                    }
                 }
             },
             Operation::Get(val) => {
@@ -241,74 +307,72 @@ impl RedisServer {
                     None => actions.push(Operation::Nil),
                 }
             }
-            Operation::Config(val_arr) => {
-                if val_arr.len() == 0 {
-                    return Err(RedisError::UnknownConfig);
-                }
-                match &val_arr[0] {
-                    ConfigOperation::Get(_) => {
-                        let mut config_arr: Vec<Operation> = Vec::new();
-                        for i in 0..val_arr.len() {
-                            match &val_arr[i] {
-                                ConfigOperation::Get(config_param) => match config_param {
-                                    ConfigParam::Dir(_) => {
-                                        match State::get_config_dir(db.config.clone()).await {
-                                            Ok(value) => {
-                                                config_arr
-                                                    .push(Operation::Echo(value.key.to_string()));
-                                                config_arr
-                                                    .push(Operation::Echo(value.value.to_string()));
-                                            }
-                                            Err(_) => (),
+            Operation::Config(config_op) => {
+                match config_op {
+                    crate::config::ConfigOperation::Get(configs) => {
+                        if configs.len() == 0 {
+                            return Err(RedisError::UnknownConfig);
+                        }
+                        let mut echos: Vec<Operation> = Vec::new();
+                        for config in configs {
+                            match config {
+                                ConfigParam::Dir(_) => {
+                                    match State::get_config_dir(db.config.clone()).await {
+                                        Ok(value) => {
+                                            echos
+                                                .push(Operation::Echo(value.key.to_string()));
+                                            echos
+                                                .push(Operation::Echo(value.value.to_string()));
                                         }
+                                        Err(_) => return Err(RedisError::MissingArgs),
                                     }
-                                    ConfigParam::DbFileName(_) => {
-                                        match State::get_config_dbfilename(db.config.clone())
-                                            .await
-                                        {
-                                            Ok(value) => {
-                                                config_arr
-                                                    .push(Operation::Echo(value.key.to_string()));
-                                                config_arr
-                                                    .push(Operation::Echo(value.value.to_string()));
-                                            }
-                                            Err(_) => (),
+                                }
+                                ConfigParam::DbFileName(_) => {
+                                    match State::get_config_dbfilename(db.config.clone())
+                                        .await
+                                    {
+                                        Ok(value) => {
+                                            echos
+                                                .push(Operation::Echo(value.key.to_string()));
+                                            echos
+                                                .push(Operation::Echo(value.value.to_string()));
                                         }
+                                        Err(_) => (),
                                     }
-                                    _ => (),
-                                },
+                                }
                                 _ => (),
                             }
+                        };
+                        actions.push(Operation::EchoArray(echos))
+                    },
+                    crate::config::ConfigOperation::Set(configs) => {
+                        if configs.len() == 0 {
+                            return Err(RedisError::UnknownConfig);
                         }
-                        actions.push(Operation::EchoArray(config_arr))
-                    }
-                    ConfigOperation::Set(_) => {
-                        for i in 0..val_arr.len() {
-                            match &val_arr[i] {
-                                ConfigOperation::Set(config_param) => match config_param {
-                                    ConfigParam::Dir(val) => {
-                                        State::set_config_dir(
-                                            db.config.clone(),
-                                            val.clone().unwrap().value.clone(),
-                                        )
-                                        .await?;
-                                    }
-                                    ConfigParam::DbFileName(val) => {
-                                        State::set_config_dbfilename(
-                                            db.config.clone(),
-                                            val.clone().unwrap().value.clone(),
-                                        )
-                                        .await?;
-                                    }
-                                    _ => (),
-                                },
+
+                        for config in configs {
+                            match config {
+                                ConfigParam::Dir(val) => {
+                                    State::set_config_dir(
+                                        db.config.clone(),
+                                        val.clone().unwrap().value.clone(),
+                                    )
+                                    .await?;
+                                }
+                                ConfigParam::DbFileName(val) => {
+                                    State::set_config_dbfilename(
+                                        db.config.clone(),
+                                        val.clone().unwrap().value.clone(),
+                                    )
+                                    .await?;
+                                }
                                 _ => (),
                             }
                         }
                         actions.push(Operation::Ok)
-                    }
+                    },
                 }
-            }
+            },
             Operation::Keys(key) => {
                 let mut arr: Vec<Operation> = Vec::new();
                 match key.as_str() {
@@ -346,7 +410,7 @@ impl RedisServer {
         Ok(actions)
     }
 
-    async fn stream_handler(mut stream: TcpStream, addr: SocketAddr, db: Arc<State>) -> () {
+    async fn stream_handler(mut stream: TcpStream, db: Arc<State>, broadcaster: Arc<Broadcaster>) -> () {
         tokio::spawn(async move {
             loop {
                 let mut buff = match Self::_receive_msg(&mut stream).await {
@@ -358,7 +422,7 @@ impl RedisServer {
                 };
 
                 if buff.buffer.len() == 0 {
-                    debug!("TCP connection from {:?} closed", addr);
+                    debug!("TCP connection from {:?} closed", stream.local_addr().unwrap());  // TODO: Handle unwrap() in case of error.
                     break;
                 }
                 trace!("Received Bytes: {:?}", buff.buffer);
@@ -370,59 +434,100 @@ impl RedisServer {
                             Ok(action_word) => {
                                 for action in action_word {
                                     trace!("Action to perform: {:?}", action);
-                                    match RespParser::encode(action) {
-                                        Ok(reply) => {
-                                            trace!("Bytes to send: {:?}", reply);
-                                            stream.write_all(reply.as_ref()).await.unwrap()
+                                    match action {
+                                        Operation::Publish(replica_ops) => {
+                                            for op in replica_ops {
+                                                if let Err(e) = broadcaster.publish(op) {
+                                                    error!("Failed to broadcast to the replicas. {:?}.", e);
+                                                }
+                                            }
+                                        },
+                                        Operation::Subscribe => {
+                                            if let Err(e) = State::increment_replicas(db.info.clone()).await {
+                                                error!("Failed to update the replica count. {:?}", e);  // TODO: Should I stop further parsing?
+                                            }
+                                            let mut receiver = broadcaster.subscribe();
+                                            while let Ok(replica_op) = receiver.recv().await {
+                                                match RespParser::encode(replica_op) {
+                                                    Ok(reply) => {
+                                                        trace!("Bytes to send: {:?}", reply);
+                                                        if let Err(e) = Self::_send_msg(&mut stream, reply.as_ref()).await {
+                                                            error!("Failed to write message to the TCP stream. {:?}", e);
+                                                        }
+                                                    }
+                                                    Err(err) => {
+                                                        let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
+                                                        if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
+                                                            error!("Failed to write message to the TCP stream. {:?}", e);
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
-                                        Err(err) => stream
-                                            .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
-                                            .await
-                                            .unwrap(),
+                                        _ => {
+                                            // TODO: Duplicated code. Improve.
+                                            match RespParser::encode(action) {
+                                                Ok(reply) => {
+                                                    trace!("Bytes to send: {:?}", reply);
+                                                    if let Err(e) = Self::_send_msg(&mut stream, reply.as_ref()).await {
+                                                        error!("Failed to write message to the TCP stream. {:?}", e);
+                                                    }
+                                                }
+                                                Err(err) => {
+                                                    let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
+                                                    if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
+                                                        error!("Failed to write message to the TCP stream. {:?}", e);
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
-                            Err(err) => stream
-                                .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
-                                .await
-                                .unwrap(),
+                            Err(err) => {
+                                let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
+                                if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
+                                    error!("Failed to write message to the TCP stream. {:?}", e);
+                                }
+                            }
                         }
                     }
-                    Err(err) => stream
-                        .write_all(format!("-ERR {:?}\r\n", err).as_bytes())
-                        .await
-                        .unwrap(),
+                    Err(err) => {
+                        let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
+                        if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
+                            error!("Failed to write message to the TCP stream. {:?}", e);
+                        }
+                    }
                 };
             }
         });
     }
 
     pub(crate) async fn run(&self) {
-        let listener = TcpListener::bind(self.host).await.unwrap();
+        let listener = TcpListener::bind(self.node.socket()).await.unwrap();
         info!(
             "Redis Server is running on {}:{}",
-            self.host.ip(),
-            self.host.port(),
+            self.node.ip(),
+            self.node.port(),
         );
         if let Err(e) = Self::load_rdb(self.db.clone()).await {
             warn!("Failed to load RDB: {:?}", e);
         }
 
-        if self.replica_of.is_some() {
-            let port = self.host.port();
-            let replica_of = self.replica_of.unwrap().clone();
-            tokio::spawn(async move {
-                if let Err(e) = Self::configure_replica(port, replica_of).await {
+        match self.node {
+            Node::Slave(addr, remote_addr) => {
+                if let Err(e) = Self::configure_replica(self.db.clone(), self.broadcast.clone(), addr.port(), remote_addr).await {
                     error!("Failed to configure replica: {:?}", e);
                 }
-            });
-        }
+            },
+            _ => ()
+        };
 
         loop {
             match listener.accept().await {
                 Ok((stream, addr)) => {
                     debug!("New TCP connection from {:?}", addr);
-                    Self::stream_handler(stream, addr, self.db.clone()).await
+                    Self::stream_handler(stream, self.db.clone(), self.broadcast.clone()).await;
                 },
                 Err(e) => {
                     error!("Failed to accept new TCP connection. {}", e);

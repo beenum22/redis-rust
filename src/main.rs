@@ -19,7 +19,7 @@ mod resp;
 mod server;
 mod state;
 
-use config::{Config, ConfigOperation, ConfigParam};
+use config::{Config, ConfigParam};
 use error::{RDBError, RedisError};
 use info::{Info, InfoOperation, ReplicationInfo};
 use ops::Operation;
