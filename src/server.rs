@@ -516,9 +516,13 @@ impl RedisServer {
 
         match self.node {
             Node::Slave(addr, remote_addr) => {
-                if let Err(e) = Self::configure_replica(self.db.clone(), self.broadcast.clone(), addr.port(), remote_addr).await {
-                    error!("Failed to configure replica: {:?}", e);
-                }
+                let db = self.db.clone();
+                let broadcast = self.broadcast.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = Self::configure_replica(db, broadcast, addr.port(), remote_addr).await {
+                        error!("Failed to configure replica: {:?}", e);
+                    }
+                });
             },
             _ => ()
         };
