@@ -410,6 +410,21 @@ impl RedisServer {
         Ok(actions)
     }
 
+    async fn encode_and_send(stream: &mut TcpStream, operation: Operation) -> Result<(), RedisError> {
+        match RespParser::encode(operation) {
+            Ok(reply) => {
+                trace!("Bytes to send: {:?}", reply);
+                Self::_send_msg(stream, reply.as_ref()).await?;
+                Ok(())
+            }
+            Err(err) => {
+                let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err)))?;
+                Self::_send_msg(stream, &err_msg.as_ref()).await?;
+                Ok(())
+            }
+        }
+    }
+
     async fn stream_handler(mut stream: TcpStream, db: Arc<State>, broadcaster: Arc<Broadcaster>) -> () {
         tokio::spawn(async move {
             loop {
@@ -448,53 +463,36 @@ impl RedisServer {
                                             }
                                             let mut receiver = broadcaster.subscribe();
                                             while let Ok(replica_op) = receiver.recv().await {
-                                                match RespParser::encode(replica_op) {
-                                                    Ok(reply) => {
-                                                        trace!("Bytes to send: {:?}", reply);
-                                                        if let Err(e) = Self::_send_msg(&mut stream, reply.as_ref()).await {
-                                                            error!("Failed to write message to the TCP stream. {:?}", e);
-                                                        }
-                                                    }
-                                                    Err(err) => {
-                                                        let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
-                                                        if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
-                                                            error!("Failed to write message to the TCP stream. {:?}", e);
-                                                        }
-                                                    }
+                                                if let Err(e) = Self::encode_and_send(&mut stream, replica_op).await {
+                                                    error!("Failed to write message to the TCP stream. {:?}", e);
                                                 }
                                             }
                                         }
+                                        Operation::Ok => {
+                                            // TODO: Handle unwrap error.
+                                            if stream.peer_addr().unwrap().port() != 6379 {
+                                                if let Err(e) = Self::encode_and_send(&mut stream, action).await {
+                                                    error!("Failed to write message to the TCP stream. {:?}", e);
+                                                }
+                                            }
+                                        },
                                         _ => {
-                                            // TODO: Duplicated code. Improve.
-                                            match RespParser::encode(action) {
-                                                Ok(reply) => {
-                                                    trace!("Bytes to send: {:?}", reply);
-                                                    if let Err(e) = Self::_send_msg(&mut stream, reply.as_ref()).await {
-                                                        error!("Failed to write message to the TCP stream. {:?}", e);
-                                                    }
-                                                }
-                                                Err(err) => {
-                                                    let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
-                                                    if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
-                                                        error!("Failed to write message to the TCP stream. {:?}", e);
-                                                    }
-                                                }
+                                            if let Err(e) = Self::encode_and_send(&mut stream, action).await {
+                                                error!("Failed to write message to the TCP stream. {:?}", e);
                                             }
                                         }
                                     }
                                 }
                             }
                             Err(err) => {
-                                let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
-                                if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
+                                if let Err(e) = Self::encode_and_send(&mut stream, Operation::Error(format!("{:?}", err))).await {
                                     error!("Failed to write message to the TCP stream. {:?}", e);
                                 }
                             }
                         }
                     }
                     Err(err) => {
-                        let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err))).unwrap();
-                        if let Err(e) = Self::_send_msg(&mut stream, &err_msg.as_ref()).await {
+                        if let Err(e) = Self::encode_and_send(&mut stream, Operation::Error(format!("{:?}", err))).await {
                             error!("Failed to write message to the TCP stream. {:?}", e);
                         }
                     }
