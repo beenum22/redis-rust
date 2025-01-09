@@ -118,7 +118,7 @@ impl RedisServer {
             // TODO: Handle Result and Option errors
             node,
             db: Arc::new(State::new(dir, dbfilename, role)),
-            broadcast: Arc::new(Broadcaster::new(16)),
+            broadcast: Arc::new(Broadcaster::new(100)),
         }
     }
 

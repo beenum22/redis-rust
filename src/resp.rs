@@ -44,7 +44,6 @@ impl RespType {
 
     pub(crate) fn decode(raw: &mut RedisBuffer) -> Result<RespType, RedisError> {
         let type_ch = raw.buffer[raw.index];
-        trace!("RESP Bytes to decode: {:?}", raw.buffer);
         raw.index += 1;
         match type_ch {
             b'+' => Ok(Self::String(Self::decode_string(raw)?)),
@@ -61,7 +60,6 @@ impl RespType {
     }
 
     pub(crate) fn encode(wtype: RespType) -> Result<Bytes, RedisError> {
-        trace!("RESP Type to encode: {:?}", wtype);
         match wtype {
             Self::String(val) => Self::encode_string(val),
             Self::Integer(val) => Self::encode_integer(val),
