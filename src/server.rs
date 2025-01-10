@@ -1,6 +1,6 @@
 use bytes::{Bytes, BytesMut};
 use log::{debug, error, info, trace, warn};
-use tokio::sync::broadcast::{channel, Receiver, Sender};
+use tokio::sync::broadcast::{self, channel, Receiver, Sender};
 use std::collections::HashMap;
 use std::env::args;
 use std::fs::File;
@@ -11,7 +11,6 @@ use std::time::SystemTime;
 use std::vec;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
-use tokio::sync::RwLock;
 
 use crate::error::{ConnectionError, ReplicaError};
 use crate::info::{ReplicationInfo, ServerInfo};
@@ -236,11 +235,13 @@ impl RedisServer {
             Operation::Psync(val) => match (val.replication_id.as_str(), val.offset as i16) {
                 ("?", -1) => {
                     let info = State::get_info(db.info.clone()).await?;
+                    actions.push(Operation::Queue);
                     actions.push(Operation::EchoString(format!(
                         "FULLRESYNC {} {}",
                         info.replication.master_replid, info.replication.master_repl_offset
                     )));
                     actions.push(Operation::EchoBytes(Bytes::copy_from_slice(b"REDIS0010\xFA\x03foo\x03bar\xFE\x00\xFD\x61\x56\x4F\x80\x00\x03bar\x03foo\xFF")));
+                    actions.push(Operation::RegisterReplica);
                     actions.push(Operation::Subscribe);
                 }
                 (_, _) => return Err(RedisError::UnknownConfig),
@@ -427,6 +428,8 @@ impl RedisServer {
 
     async fn stream_handler(mut stream: TcpStream, db: Arc<State>, broadcaster: Arc<Broadcaster>) -> () {
         tokio::spawn(async move {
+            let queue = broadcast::channel(16);
+            let queue_in = Arc::new(queue.0);
             loop {
                 let mut buff = match Self::_receive_msg(&mut stream).await {
                     Ok(data) => data,
@@ -455,13 +458,42 @@ impl RedisServer {
                                                 if let Err(e) = broadcaster.publish(op) {
                                                     error!("Failed to broadcast to the replicas. {:?}.", e);
                                                 }
+                                                trace!("SENT IN BROADCAST");
                                             }
                                         },
-                                        Operation::Subscribe => {
-                                            if let Err(e) = State::increment_replicas(db.info.clone()).await {
-                                                error!("Failed to update the replica count. {:?}", e);  // TODO: Should I stop further parsing?
+                                        Operation::RegisterReplica => {
+                                            // TODO: Handle unwrap() in case of error.
+                                            if let Err(e) = State::increment_replicas(db.info.clone(), stream.peer_addr().unwrap()).await {
+                                                error!("Failed to register the replica. {:?}", e);  // TODO: Should I stop further parsing?
                                             }
+                                        }
+                                        Operation::Queue => {
                                             let mut receiver = broadcaster.subscribe();
+                                            let queue_in_clone = queue_in.clone();
+                                            let addr = stream.local_addr().unwrap();
+                                            let db_clone = db.clone();
+                                            tokio::spawn(async move {
+                                                while let Ok(replica_op) = receiver.recv().await {
+                                                    if State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
+                                                        if let Err(e) = queue_in_clone.send(replica_op) {
+                                                            error!("Failed to queue published operations for the replica TCP stream. {:?}", e);
+                                                        }
+                                                    } else {
+                                                        break
+                                                    }
+                                                }
+                                            });
+                                        }
+                                        Operation::Subscribe => {
+                                            let mut receiver = broadcaster.subscribe();
+                                            let mut queue_out = queue_in.subscribe();
+                                            while State::has_replica(db.info.clone(), &stream.local_addr().unwrap()).await.unwrap() == false {
+                                                if let Ok(queue_op) = queue_out.recv().await {
+                                                    if let Err(e) = Self::encode_and_send(&mut stream, queue_op).await {
+                                                        error!("Failed to write message to the TCP stream. {:?}", e);
+                                                    }
+                                                }
+                                            };
                                             while let Ok(replica_op) = receiver.recv().await {
                                                 if let Err(e) = Self::encode_and_send(&mut stream, replica_op).await {
                                                     error!("Failed to write message to the TCP stream. {:?}", e);

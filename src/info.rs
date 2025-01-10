@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{collections::HashSet, net::SocketAddr};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ReplicationInfo {
@@ -6,7 +6,7 @@ pub(crate) struct ReplicationInfo {
     pub(crate) master_replid: String,
     pub(crate) master_repl_offset: i16,
     pub(crate) connected_slaves: u16,
-    pub(crate) slaves: Vec<SocketAddr>
+    pub(crate) slaves: HashSet<SocketAddr>
 }
 
 impl ReplicationInfo {
@@ -16,7 +16,7 @@ impl ReplicationInfo {
             master_replid: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb".to_string(),
             master_repl_offset: 0,
             connected_slaves: 0,
-            slaves: Vec::new(),
+            slaves: HashSet::new(),
         }
     }
 
@@ -26,9 +26,11 @@ impl ReplicationInfo {
         info_vec.push(format!("master_replid:{}", info.master_replid));
         info_vec.push(format!("master_repl_offset:{}", info.master_repl_offset));
         info_vec.push(format!("connection_slaves:{}", info.connected_slaves));
-        for i in 0..info.slaves.len() {
-            info_vec.push(format!("slave{}:{}", i, info.slaves[i]));
-        };
+        let mut i: usize = 0;
+        for slave in &info.slaves {
+            info_vec.push(format!("slave{}:{}", i, slave));
+            i += 1;
+        }
         info_vec.push("\n".to_string(),);
         info_vec
     }

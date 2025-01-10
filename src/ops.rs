@@ -51,8 +51,6 @@ impl OperationType {
             Operation::Ping => OperationType::Read,
             Operation::ReplicaConf(_) => OperationType::Write,
             Operation::Psync(_) => OperationType::Write,  // Not sure.
-            Operation::Publish(_) => OperationType::Internal,
-            Operation::Subscribe => OperationType::Internal,
             Operation::Echo(_) => OperationType::Read,
             Operation::EchoString(_) => OperationType::Read,
             Operation::EchoBytes(_) => OperationType::Read,
@@ -67,8 +65,8 @@ impl OperationType {
             Operation::Nil => OperationType::Read,
             Operation::EchoArray(_) => OperationType::Read,
             Operation::Info(_) => OperationType::Read,
-            Operation::RdbFile(_) => OperationType::Internal,
             Operation::Error(_) => OperationType::Read,
+            _ => OperationType::Internal
         }
     }
 }
@@ -80,6 +78,8 @@ pub(crate) enum Operation {
     Psync(Psync),
     Publish(Vec<Operation>),  // Internal operation
     Subscribe,  // Internal operation
+    Queue,  // Internal operation
+    RegisterReplica,  // Internal operation
     Echo(String),
     EchoString(String),
     EchoBytes(Bytes),
