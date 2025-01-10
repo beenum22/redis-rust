@@ -3,6 +3,7 @@ use lzf;
 use std::borrow::Borrow;
 use std::fs::{read, File};
 use std::io::{BufReader, Read};
+use std::net::SocketAddr;
 use std::str;
 use std::{
     collections::HashMap,
@@ -82,13 +83,23 @@ impl State {
         Ok(info_ro.clone())
     }
 
-    pub async fn increment_replicas<'a>(info: Arc<RwLock<Info>>) -> Result<u16, RedisError> {
+    pub async fn has_replica(info: Arc<RwLock<Info>>, addr: &SocketAddr) -> Result<bool, RedisError> {
+        let info_ro = info.read().await;
+        if info_ro.replication.slaves.get(addr).is_some() {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub async fn increment_replicas(info: Arc<RwLock<Info>>, addr: SocketAddr) -> Result<u16, RedisError> {
         let mut info_rw = info.write().await;
         info_rw.replication.connected_slaves += 1;
+        info_rw.replication.slaves.insert(addr);
         Ok(info_rw.replication.connected_slaves)
     }
 
-    pub async fn decrement_replicas<'a>(info: Arc<RwLock<Info>>) -> Result<u16, RedisError> {
+    pub async fn decrement_replicas(info: Arc<RwLock<Info>>) -> Result<u16, RedisError> {
         let mut info_rw = info.write().await;
         info_rw.replication.connected_slaves -= 1;
         Ok(info_rw.replication.connected_slaves)
@@ -171,7 +182,7 @@ pub struct SetMap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
+    use std::{net::ToSocketAddrs, time::Duration};
 
     #[tokio::test]
     async fn test_new() {
@@ -274,15 +285,31 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_has_replica() {
+        let redis_state = State::new(
+            "/data".to_string(),
+            "dump.rdb".to_string(),
+            "master".to_string(),
+        );
+        let socket_1 = "127.0.0.1:80".to_string().to_socket_addrs().unwrap().next().unwrap();
+        assert_eq!(State::has_replica(redis_state.info.clone(), &socket_1).await.unwrap(), false);
+        State::increment_replicas(redis_state.info.clone(), socket_1).await.unwrap();
+        assert_eq!(State::has_replica(redis_state.info.clone(), &socket_1).await.unwrap(), true);
+    }
+
+    #[tokio::test]
     async fn test_increment_replicas() {
         let redis_state = State::new(
             "/data".to_string(),
             "dump.rdb".to_string(),
             "master".to_string(),
         );
-        assert_eq!(State::increment_replicas(redis_state.info.clone()).await.unwrap(), 1);
-        assert_eq!(State::increment_replicas(redis_state.info.clone()).await.unwrap(), 2);
-        assert_eq!(State::increment_replicas(redis_state.info.clone()).await.unwrap(), 3);
+        let socket_1 = "127.0.0.1:80".to_string().to_socket_addrs().unwrap().next().unwrap();
+        let socket_2 = "127.0.0.2:80".to_string().to_socket_addrs().unwrap().next().unwrap();
+        assert_eq!(State::increment_replicas(redis_state.info.clone(), socket_1).await.unwrap(), 1);
+        assert_eq!(State::has_replica(redis_state.info.clone(), &socket_1).await.unwrap(), true);
+        assert_eq!(State::increment_replicas(redis_state.info.clone(), socket_2).await.unwrap(), 2);
+        assert_eq!(State::has_replica(redis_state.info.clone(), &socket_2).await.unwrap(), true);
     }
 
     #[tokio::test]
@@ -292,8 +319,10 @@ mod tests {
             "dump.rdb".to_string(),
             "master".to_string(),
         );
-        State::increment_replicas(redis_state.info.clone()).await;
-        State::increment_replicas(redis_state.info.clone()).await;
+        let socket_1 = "127.0.0.1:80".to_string().to_socket_addrs().unwrap().next().unwrap();
+        let socket_2 = "127.0.0.2:80".to_string().to_socket_addrs().unwrap().next().unwrap();
+        State::increment_replicas(redis_state.info.clone(), socket_1).await;
+        State::increment_replicas(redis_state.info.clone(), socket_2).await;
         assert_eq!(State::decrement_replicas(redis_state.info.clone()).await.unwrap(), 1);
         assert_eq!(State::decrement_replicas(redis_state.info.clone()).await.unwrap(), 0);
     }
