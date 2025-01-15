@@ -4,6 +4,7 @@ use tokio_util::codec::{Decoder, Encoder};
 use core::str;
 
 use crate::error::{RedisError, RespError};
+use crate::rdb::RDB_MAGIC;
 
 #[derive(PartialEq, Debug)]
 pub(crate) enum RespTypeV2 {
@@ -13,7 +14,7 @@ pub(crate) enum RespTypeV2 {
     BulkString(String),
     Array(Vec<Self>),
     Null,
-    Bytes(Bytes),
+    RDB(Bytes),
     //     Boolean(bool),
     //     Double(f32),
     //     BigNumber(i128),
@@ -39,7 +40,14 @@ impl RespParserV2 {
     const CRLF: &[u8; 2] = b"\r\n";
 
     fn find_crlf(raw: &BytesMut) -> Option<usize> {
-        raw.windows(2).position(|w| w == Self::CRLF)
+        let special: &[u8] = &[b'$'];
+        if let Some(pos) = raw.windows(2).position(|w| w == Self::CRLF) {
+            if pos > 0 && raw[1..pos].iter().any(|&b| special.contains(&b)) {
+                return None
+            }
+            return Some(pos);
+        }
+        None
     }
 
     fn decode_integer(&mut self, raw: &mut BytesMut) -> Result<Option<RespTypeV2>, RedisError> {
@@ -96,7 +104,14 @@ impl RespParserV2 {
                 raw.advance(index + RespParserV2::CRLF.len());
                 Ok(Some(RespTypeV2::BulkString(value_str)))
             },
-            None => Ok(None),
+            None => {
+                if raw.len() > 4 && &raw[..5] == RDB_MAGIC {
+                    let bytes = Bytes::copy_from_slice(&raw[..count as usize]);
+                    raw.advance(count as usize);
+                    return Ok(Some(RespTypeV2::RDB(bytes)))
+                }
+                Ok(None)
+            },
         }
     }
 
@@ -217,6 +232,14 @@ mod resp {
 
     use crate::{error::{RedisError, RespError}, resp_v2::{RespParserV2, RespTypeV2}};
 
+    #[test]
+    fn test_find_crlf() {
+        let mut buff = BytesMut::from(":2\r\n:-2\r\n:23");
+        assert_eq!(RespParserV2::find_crlf(&mut buff), Some(2));
+
+        let mut buff = BytesMut::from("hello$5\r\nworld\r\n:-2\r\n:23");
+        assert_eq!(RespParserV2::find_crlf(&mut buff), None);
+    }
 
     #[test]
     fn test_decode_integer() {
@@ -293,7 +316,6 @@ mod resp {
         assert_eq!(empty_val.unwrap().unwrap(), RespTypeV2::BulkString("".to_string()));
     
         let incomplete_val = parser.decode_bulk_string(&mut buff);
-        println!("{:?}", incomplete_val);
         assert!(incomplete_val.is_ok());
         assert!(incomplete_val.as_ref().unwrap().is_none());
 
@@ -301,6 +323,12 @@ mod resp {
         let invalid_len = parser.decode_bulk_string(&mut buff);
         assert!(invalid_len.is_err());
         assert!(matches!(invalid_len, Err(RedisError::RESP(RespError::IncorrectBulkStringSize))));
+
+        let mut rdb_buff = BytesMut::from("$17\r\nREDISfoobarfoobar");
+        let rdb = parser.decode_bulk_string(&mut rdb_buff);
+        assert!(rdb.is_ok());
+        assert!(rdb.as_ref().unwrap().is_some());
+        assert_eq!(rdb.unwrap().unwrap(), RespTypeV2::RDB(Bytes::from("REDISfoobarfoobar")));
     }
 
     #[test]
@@ -404,7 +432,7 @@ mod resp {
 
     #[test]
     fn test_decode() {
-        let mut buff = BytesMut::from("+hello\r\n$3\r\nfoo\r\n*3\r\n$3\r\nfoo\r\n$3\r\nbar\r\n:42\r\n-foo\r\n_\r\n");
+        let mut buff = BytesMut::from("+hello\r\n$3\r\nfoo\r\n*3\r\n$3\r\nfoo\r\n$3\r\nbar\r\n:42\r\n-foo\r\n_\r\n$11\r\nREDISfoobar$3\r\nfoo\r\n");
         let mut parser = RespParserV2 {};
 
         let decode_next = parser.decode(&mut buff);
@@ -432,6 +460,18 @@ mod resp {
         let decode_next = parser.decode(&mut buff);
         assert!(decode_next.is_ok());
         assert_eq!(decode_next.unwrap(), Some(RespTypeV2::Null));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespTypeV2::RDB(Bytes::from("REDISfoobar"))));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespTypeV2::BulkString(String::from("foo"))));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), None);
     }
 
     #[test]
