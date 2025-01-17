@@ -303,7 +303,7 @@ impl RedisServer {
                     )));
                     actions.push(Operation::EchoBytes(Bytes::copy_from_slice(b"REDIS0010\xFA\x03foo\x03bar\xFE\x00\xFD\x61\x56\x4F\x80\x00\x03bar\x03foo\xFF")));
                     actions.push(Operation::RegisterReplica);
-                    actions.push(Operation::ReplicaConf(vec![ReplicaConfigOperation::GetAck("*".to_string())]));
+                    // actions.push(Operation::ReplicaConf(vec![ReplicaConfigOperation::GetAck("*".to_string())]));
                     actions.push(Operation::Subscribe);
                 }
                 (_, _) => return Err(RedisError::UnknownConfig),
