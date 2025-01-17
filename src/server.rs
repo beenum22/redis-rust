@@ -1,6 +1,10 @@
+use futures::{SinkExt, StreamExt};
 use bytes::{Bytes, BytesMut};
 use log::{debug, error, info, trace, warn};
+use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::sync::broadcast::{self, channel, Receiver, Sender};
+use tokio::sync::mpsc;
+use tokio_util::codec::{Framed, FramedRead, FramedWrite};
 use std::collections::HashMap;
 use std::env::args;
 use std::fs::File;
@@ -12,13 +16,14 @@ use std::vec;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpSocket, TcpStream};
 
-use crate::error::{ConnectionError, ReplicaError};
+use crate::error::{ConnectionError, ReplicaError, ServerError};
 use crate::info::{ReplicationInfo, ServerInfo};
-use crate::ops::{Psync, ReplicaConfigOperation};
-use crate::resp::RespType;
+use crate::ops::{Operation, Psync, ReplicaConfigOperation};
+// use crate::resp::RespType;
+use crate::resp::RespParser;
 use crate::{
-    Config, ConfigParam, InfoOperation, Operation, RDBError, RdbParser,
-    RedisBuffer, RedisError, State, RespParser, SetOverwriteArgs,
+    Config, ConfigParam, InfoOperation, RDBError, RdbParser,
+    RedisBuffer, RedisError, State, SetOverwriteArgs,
 };
 
 pub(crate) struct Broadcaster {
@@ -148,61 +153,100 @@ impl RedisServer {
         let mut stream = TcpStream::connect(server)
             .await
             .map_err(|_| RedisError::Connection(ConnectionError::FailedToWriteBytes))?;
+        let (mut ro_tx, mut rx_writer) = stream.into_split();
+        let mut reader = FramedRead::new(ro_tx, RespParser::new());
+        let mut writer = FramedWrite::new(rx_writer, RespParser::new());
         info!("Connected as replica to {}", server);
 
-        let ping = RespParser::encode(Operation::Ping)?;
-        Self::_send_msg(&mut stream, ping.as_ref()).await?;
-        let mut buff = Self::_receive_msg(&mut stream).await?;
-        match RespParser::decode(&mut buff)? {
-            Operation::Ok => debug!("Replica server is reachable"),
-            Operation::Error(err) => error!("Replica Ping response failed. {}", err),
-            _ => return Err(RedisError::UnknownResponse),
+        writer.send(Operation::encode(Operation::Ping)?).await?;
+        match reader.next().await {
+            Some(Ok(msg)) => {
+                match Operation::decode(msg)? {
+                    Operation::Ok => debug!("Replica server is reachable"),
+                    Operation::Error(err) => error!("Replica Ping response failed. {}", err),
+                    _ => return Err(RedisError::Replica(ReplicaError::StatusUknown)),
+                }
+            }
+            _ => return Err(RedisError::Replica(ReplicaError::StatusUknown))
         }
 
         let replconf_port: Vec<ReplicaConfigOperation> =
             vec![ReplicaConfigOperation::ListeningPort(port)];
-        let replconf_port_enc = RespParser::encode(Operation::ReplicaConf(replconf_port))?;
-        Self::_send_msg(&mut stream, &replconf_port_enc.as_ref()).await?;
-        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-            Operation::Ok => debug!("Replica listening port successfully configured"),
-            Operation::Error(err) => error!("Failed to configure replica listening port. {}", err),
-            _ => return Err(RedisError::UnknownResponse),
+        writer.send(Operation::encode(Operation::ReplicaConf(replconf_port))?).await?;
+        match reader.next().await {
+            Some(Ok(msg)) => {
+                match Operation::decode(msg)? {
+                    Operation::Ok => debug!("Replica listening port successfully configured"),
+                    Operation::Error(err) => error!("Failed to configure replica listening port. {}", err),
+                    _ => return Err(RedisError::UnknownResponse),
+                }
+            }
+            _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
         }
 
         let replconf_capa: Vec<ReplicaConfigOperation> = vec![
             ReplicaConfigOperation::Capabilities("eof".to_string()),
             ReplicaConfigOperation::Capabilities("psync2".to_string()),
         ];
-        let replconf_capa_enc = RespParser::encode(Operation::ReplicaConf(replconf_capa))?;
-        Self::_send_msg(&mut stream, &replconf_capa_enc.as_ref()).await?;
-        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-            Operation::Ok => debug!("Replica eof and psync2 capabilities successfully configured"),
-            Operation::Error(err) => error!("Failed to configure replica capabilities. {}", err),
-            _ => return Err(RedisError::UnknownResponse),
+        writer.send(Operation::encode(Operation::ReplicaConf(replconf_capa))?).await?;
+        match reader.next().await {
+            Some(Ok(msg)) => {
+                match Operation::decode(msg)? {
+                    Operation::Ok => debug!("Replica eof and psync2 capabilities successfully configured"),
+                    Operation::Error(err) => error!("Failed to configure replica capabilities. {}", err),
+                    _ => return Err(RedisError::UnknownResponse),
+                }
+            }
+            _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
         }
 
-        let psync = RespParser::encode(Operation::Psync(Psync::new("?".to_string(), -1)))?;
-        Self::_send_msg(&mut stream, &psync.as_ref()).await?;
-        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-            Operation::Nil => debug!("Replica state resynchronization details successfully shared"),
-            Operation::Error(err) => {
-                error!("Failed to share replica resynchronization details. {}", err)
+        writer.send(Operation::encode(Operation::Psync(Psync::new("?".to_string(), -1)))?).await?;
+        match reader.next().await {
+            Some(Ok(msg)) => {
+                match Operation::decode(msg)? {
+                    Operation::Nil => debug!("Replica state resynchronization details successfully shared"),
+                    Operation::Error(err) => {
+                        error!("Failed to share replica resynchronization details. {}", err)
+                    }
+                    _ => error!("Failed to share replica resynchronization details. Invalid Resp type received."),
+                }
             }
-            _ => return Err(RedisError::UnknownResponse),
+            _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
         }
 
-        match RespParser::decode(&mut Self::_receive_msg(&mut stream).await?)? {
-            Operation::RdbFile(val) => {
-                debug!("Replica state synchronization successfully initiated")
+        match reader.next().await {
+            Some(Ok(msg)) => {
+                match Operation::decode(msg)? {
+                    Operation::RdbFile(_) => debug!("Replica state synchronization successfully initiated"),
+                    Operation::Error(err) => error!("Failed to initiate replica state synchronization. {}", err),
+                    _ => error!("Failed to initiate replica state synchronization. Unknown Operation type received.")
+                }
             }
-            Operation::Error(err) => {
-                error!("Failed to initiate replica state synchronization. {}", err)
-            }
-            _ => return Err(RedisError::UnknownResponse),
+            _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
         }
-        
+
+        match reader.next().await {
+            Some(Ok(msg)) => {
+                match Operation::decode(msg)? {
+                    Operation::ReplicaConf(conf) => {
+                        match &conf[0] {
+                            ReplicaConfigOperation::GetAck(val) => match val.as_str() {
+                                "*" => {
+                                    writer.send(Operation::encode(Operation::ReplicaConf(vec![ReplicaConfigOperation::Ack(0)]))?).await?;
+                                },
+                                _ => error!("Received invalid GETACK argument value for acknowledgement by the master server.")
+                            },
+                            _ => error!("Received invalid replconf type command for acknowledgement by the master server."),
+                        }
+                    },
+                    _ => error!("Received invalid replconf type command for acknowledgement by the master server."),
+                }
+            }
+            _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
+        }
+
         debug!("Subscribed to the server at {}", server);
-        Self::stream_handler(stream, db, broadcaster).await;
+        Self::stream_handler(reader, writer, db, broadcaster).await?;
         Ok(())
     }
 
@@ -231,7 +275,24 @@ impl RedisServer {
         match word {
             Operation::Ping => actions.push(Operation::EchoString("PONG".to_string())),
             Operation::Echo(_) => actions.push(word),
-            Operation::ReplicaConf(_) => actions.push(Operation::Ok), // TODO: Parse later.
+            Operation::ReplicaConf(replconfs) => {
+                let mut send_ok = false;
+                for conf in replconfs {
+                    match conf {
+                        ReplicaConfigOperation::GetAck(val) => {
+                            if val.as_str() == "*" {
+                                actions.push(
+                                    Operation::ReplicaConf(vec![ReplicaConfigOperation::Ack(0)])
+                                )
+                            }
+                        },
+                        _ => send_ok = true
+                    }
+                }
+                if send_ok {
+                    actions.push(Operation::Ok)
+                }
+            },
             Operation::Psync(val) => match (val.replication_id.as_str(), val.offset as i16) {
                 ("?", -1) => {
                     let info = State::get_info(db.info.clone()).await?;
@@ -242,12 +303,15 @@ impl RedisServer {
                     )));
                     actions.push(Operation::EchoBytes(Bytes::copy_from_slice(b"REDIS0010\xFA\x03foo\x03bar\xFE\x00\xFD\x61\x56\x4F\x80\x00\x03bar\x03foo\xFF")));
                     actions.push(Operation::RegisterReplica);
+                    actions.push(Operation::ReplicaConf(vec![ReplicaConfigOperation::GetAck("*".to_string())]));
                     actions.push(Operation::Subscribe);
                 }
                 (_, _) => return Err(RedisError::UnknownConfig),
             },
             Operation::Set(set_args) => {
-                actions.push(Operation::Publish(vec![propagation_copy]));
+                if State::get_role(db.info.clone()).await? == "master".to_string() {
+                    actions.push(Operation::Publish(vec![propagation_copy]));
+                };
                 match &set_args.overwrite {
                     Some(val) => {
                         let key_state = State::get_key(db.state.clone(), &set_args.key).await?;
@@ -406,132 +470,168 @@ impl RedisServer {
                 actions.push(Operation::Echo(arr.join("\n")))
             }
             Operation::Nil => actions.push(Operation::Nil),
+            Operation::Error(_) => actions.push(Operation::Nil),
             _ => return Err(RedisError::UnknownCommand),
         }
         Ok(actions)
     }
 
-    async fn encode_and_send(stream: &mut TcpStream, operation: Operation) -> Result<(), RedisError> {
-        match RespParser::encode(operation) {
-            Ok(reply) => {
-                trace!("Bytes to send: {:?}", reply);
-                Self::_send_msg(stream, reply.as_ref()).await?;
-                Ok(())
-            }
-            Err(err) => {
-                let err_msg = RespParser::encode(Operation::Error(format!("{:?}", err)))?;
-                Self::_send_msg(stream, &err_msg.as_ref()).await?;
-                Ok(())
-            }
-        }
-    }
+    // async fn stream_handler_v2(mut stream: TcpStream, db: Arc<State>, broadcaster: Arc<BroadcasterV2>) -> Result<(), RedisError> {
+    async fn stream_handler(mut reader: FramedRead<OwnedReadHalf, RespParser>, mut writer: FramedWrite<OwnedWriteHalf, RespParser>, db: Arc<State>, broadcaster: Arc<Broadcaster>) -> Result<(), RedisError> {
+        // let actions: (mpsc::Sender<OperationV2>, mpsc::Receiver<OperationV2>) = mpsc::channel(100);
+        // let (req_tx, mut req_rx): (mpsc::Sender<OperationV2>, mpsc::Receiver<OperationV2>) = mpsc::channel(100);
+        // let queue: (broadcast::Sender<OperationV2>, broadcast::Receiver<OperationV2>) = broadcast::channel(16);
+        let (queue_in, queue_out): (broadcast::Sender<Operation>, broadcast::Receiver<Operation>) = broadcast::channel(16);
+        // let queue_in = Arc::new(queue.0);
 
-    async fn stream_handler(mut stream: TcpStream, db: Arc<State>, broadcaster: Arc<Broadcaster>) -> () {
+        let (actions_tx, mut actions_rx): (mpsc::Sender<Operation>, mpsc::Receiver<Operation>) = mpsc::channel(100);
+
+        // let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+
+        let reader_db = db.clone();
         tokio::spawn(async move {
-            let queue = broadcast::channel(16);
-            let queue_in = Arc::new(queue.0);
-            loop {
-                let mut buff = match Self::_receive_msg(&mut stream).await {
-                    Ok(data) => data,
-                    Err(e) => {
-                        error!("Failed to receive message from the TCP stream. {:?}", e);
-                        continue
-                    },
-                };
-
-                if buff.buffer.len() == 0 {
-                    debug!("TCP connection from {:?} closed", stream.local_addr().unwrap());  // TODO: Handle unwrap() in case of error.
-                    break;
-                }
-                trace!("Received Bytes: {:?}", buff.buffer);
-
-                match RespParser::decode(&mut buff) {
-                    Ok(decoded_word) => {
-                        let actions = Self::action(db.clone(), decoded_word).await;
-                        match actions {
-                            Ok(action_word) => {
-                                for action in action_word {
-                                    trace!("Action to perform: {:?}", action);
-                                    match action {
-                                        Operation::Publish(replica_ops) => {
-                                            for op in replica_ops {
-                                                if let Err(e) = broadcaster.publish(op) {
-                                                    error!("Failed to broadcast to the replicas. {:?}.", e);
-                                                }
-                                                trace!("SENT IN BROADCAST");
-                                            }
-                                        },
-                                        Operation::RegisterReplica => {
-                                            // TODO: Handle unwrap() in case of error.
-                                            if let Err(e) = State::increment_replicas(db.info.clone(), stream.peer_addr().unwrap()).await {
-                                                error!("Failed to register the replica. {:?}", e);  // TODO: Should I stop further parsing?
-                                            }
-                                        }
-                                        Operation::Queue => {
-                                            let mut receiver = broadcaster.subscribe();
-                                            let queue_in_clone = queue_in.clone();
-                                            let addr = stream.local_addr().unwrap();
-                                            let db_clone = db.clone();
-                                            tokio::spawn(async move {
-                                                while let Ok(replica_op) = receiver.recv().await {
-                                                    if State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
-                                                        if let Err(e) = queue_in_clone.send(replica_op) {
-                                                            error!("Failed to queue published operations for the replica TCP stream. {:?}", e);
-                                                        }
-                                                    } else {
-                                                        break
-                                                    }
-                                                }
-                                            });
-                                        }
-                                        Operation::Subscribe => {
-                                            let mut receiver = broadcaster.subscribe();
-                                            let mut queue_out = queue_in.subscribe();
-                                            while State::has_replica(db.info.clone(), &stream.local_addr().unwrap()).await.unwrap() == false {
-                                                if let Ok(queue_op) = queue_out.recv().await {
-                                                    if let Err(e) = Self::encode_and_send(&mut stream, queue_op).await {
-                                                        error!("Failed to write message to the TCP stream. {:?}", e);
-                                                    }
-                                                }
-                                            };
-                                            while let Ok(replica_op) = receiver.recv().await {
-                                                if let Err(e) = Self::encode_and_send(&mut stream, replica_op).await {
-                                                    error!("Failed to write message to the TCP stream. {:?}", e);
-                                                }
-                                            }
-                                        }
-                                        Operation::Ok => {
-                                            // TODO: Handle unwrap error.
-                                            if stream.peer_addr().unwrap().port() != 6379 {
-                                                if let Err(e) = Self::encode_and_send(&mut stream, action).await {
-                                                    error!("Failed to write message to the TCP stream. {:?}", e);
-                                                }
-                                            }
-                                        },
-                                        _ => {
-                                            if let Err(e) = Self::encode_and_send(&mut stream, action).await {
-                                                error!("Failed to write message to the TCP stream. {:?}", e);
-                                            }
-                                        }
+            while let Some(result) = reader.next().await {
+                trace!("Resp Requested: {:?}-{:?}", result, reader.get_ref().peer_addr());
+                match result {
+                    Ok(message) => {
+                        match Operation::decode(message) {
+                            Ok(op) => {
+                                trace!("Operation requested: {:?}", op);
+                                let actions = Self::action(reader_db.clone(), op).await.unwrap();
+                                for act in actions {
+                                    if let Err(e) = actions_tx.send(act).await {
+                                        error!("Failed to take action for message. {:?}", e);
                                     }
                                 }
-                            }
-                            Err(err) => {
-                                if let Err(e) = Self::encode_and_send(&mut stream, Operation::Error(format!("{:?}", err))).await {
-                                    error!("Failed to write message to the TCP stream. {:?}", e);
+                            },
+                            Err(e) => {
+                                error!("Failed to decode Resp message. {:?}", e);
+                                if let Err(e) = actions_tx.send(Operation::Error(format!("{:?}", e))).await {
+                                    error!("Failed to take action for message. {:?}", e);
                                 }
-                            }
+                            },
                         }
                     }
                     Err(err) => {
-                        if let Err(e) = Self::encode_and_send(&mut stream, Operation::Error(format!("{:?}", err))).await {
-                            error!("Failed to write message to the TCP stream. {:?}", e);
+                        if let Err(e) = actions_tx.send(Operation::Error(format!("{:?}", err))).await {
+                            error!("Failed to take action for message. {:?}", e);
                         }
                     }
-                };
+                }
+            }
+            // let _ = shutdown_tx.send(()); // Notify writer to shut down
+        });
+
+        tokio::spawn(async move {
+            while let Some(action) = actions_rx.recv().await {
+                trace!("Action to take: {:?}", action);
+                match action {
+                    Operation::Publish(replica_ops) => {
+                        for op in replica_ops {
+                            if let Err(e) = broadcaster.publish(op) {
+                                error!("Failed to broadcast to the replicas. {:?}.", e);
+                            }
+                        }
+                    },
+                    Operation::RegisterReplica => {
+                        let db_clone = db.clone();
+                        match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
+                            Ok(addr) => {
+                                if let Err(e) = State::increment_replicas(db_clone.info.clone(), addr).await {
+                                    error!("Failed to increment replicas count for {:?} addr. {:?}", addr, e);
+                                }
+                            },
+                            Err(e) => error!("Failed to get stream peer address needed for replica increment. {:?}", e),
+                        }
+                    },
+                    Operation::Queue => {
+                        let db_clone = db.clone();
+                        let mut broadcast_rx = broadcaster.subscribe();
+                        let queue_in_clone = queue_in.clone();
+                        match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
+                            Ok(addr) => {
+                                tokio::spawn(async move {
+                                    while let Ok(replica_op) = broadcast_rx.recv().await {
+                                        if State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
+                                            if let Err(e) = queue_in_clone.send(replica_op) {
+                                                error!("Failed to queue published operations for the replica TCP stream. {:?}", e);
+                                            }
+                                        } else {
+                                            break
+                                        }
+                                    }
+                                });
+                            },
+                            Err(e) => error!("Failed to get stream peer address needed for queue broadcasted operations. {:?}", e),
+                        }
+                    }
+                    Operation::Subscribe => {
+                        let db_clone = db.clone();
+                        let mut broadcast_rx = broadcaster.subscribe();
+                        let queue_in_clone = queue_in.clone();
+                        let mut queue_out = queue_in_clone.subscribe();
+                        match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
+                            Ok(addr) => {
+                                while State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
+                                    if let Ok(queue_op) = queue_out.recv().await {
+                                        if let Err(e) = writer.send(Operation::encode(queue_op).unwrap()).await {
+                                            error!("Failed to write queued message to the TCP stream. {:?}", e);
+                                        }
+                                    }
+                                }
+                            },
+                            Err(e) => error!("Failed to get stream peer address needed for operations subscription. {:?}", e),
+                        };
+                        while let Ok(replica_op) = broadcast_rx.recv().await {
+                            match Operation::encode(replica_op) {
+                                Ok(resp) => {
+                                    if let Err(e) = writer.send(resp).await {
+                                        error!("Failed to write broadcasted message to the TCP stream. {:?}", e);
+                                    }
+                                },
+                                Err(e) => error!("Failed to decode Resp message. {:?}", e),
+                            }
+                        }
+                    },
+                    Operation::Ok => {
+                        // TODO: Remove hardcoded port
+                        if writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)).unwrap().port() != 6379 {
+                            match Operation::encode(action) {
+                                Ok(resp) => {
+                                    if let Err(e) = writer.send(resp).await {
+                                        error!("Failed to write Ok response to the TCP stream. {:?}", e);
+                                    }
+                                },
+                                Err(e) => error!("Failed to decode Resp message. {:?}", e),
+                            }
+                        }
+                    },
+                    _ => {
+                        match Operation::encode(action) {
+                            Ok(resp) => {
+                                if let Err(e) = writer.send(resp).await {
+                                    error!("Failed to write message to the TCP stream. {:?}", e);
+                                }
+                            },
+                            Err(e) => error!("Failed to decode Resp message. {:?}", e),
+                        }
+                        
+                    }
+                }
+                // tokio::select! {
+                //     _ = shutdown_rx => {
+                //         println!("Writer shutting down.");
+                //     }
+                // }
+                // if let Err(e) = writer.send(OperationV2::encode(action).unwrap()).await {
+                //     eprintln!("Error writing to stream: {:?}", e);
+                //     break; // Break the loop on error
+                // }
             }
         });
+        Ok(())
     }
+
 
     pub(crate) async fn run(&self) {
         let listener = TcpListener::bind(self.node.socket()).await.unwrap();
@@ -561,7 +661,14 @@ impl RedisServer {
             match listener.accept().await {
                 Ok((stream, addr)) => {
                     debug!("New TCP connection from {:?}", addr);
-                    Self::stream_handler(stream, self.db.clone(), self.broadcast.clone()).await;
+                    let db = self.db.clone();
+                    let broadcast = self.broadcast.clone();
+                    tokio::spawn(async move {
+                        let (ro_tx, rx_writer) = stream.into_split();
+                        let reader = FramedRead::new(ro_tx, RespParser::new());
+                        let mut writer = FramedWrite::new(rx_writer, RespParser::new());
+                        Self::stream_handler(reader, writer, db, broadcast).await;
+                    });
                 },
                 Err(e) => {
                     error!("Failed to accept new TCP connection. {}", e);

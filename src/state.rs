@@ -1,3 +1,4 @@
+use log::trace;
 // TODO: Avoid using cloning. For example: state.info.
 use lzf;
 use std::borrow::Borrow;
@@ -12,10 +13,10 @@ use std::{
 };
 use tokio::sync::{RwLock, RwLockReadGuard};
 
-use crate::config::ConfigPair;
+use crate::config::{Config, ConfigPair};
 use crate::info::{Info, ServerInfo};
 use crate::{
-    error::RDBError, error::RedisError, error::StateError, ops::Operation, Config, ConfigParam,
+    error::RDBError, error::RedisError, error::StateError, config, ConfigParam,
 };
 
 #[derive(Debug)]
@@ -81,6 +82,11 @@ impl State {
     pub async fn get_info<'a>(info: Arc<RwLock<Info>>) -> Result<Info, RedisError> {
         let info_ro = info.read().await;
         Ok(info_ro.clone())
+    }
+
+    pub async fn get_role<'a>(info: Arc<RwLock<Info>>) -> Result<String, RedisError> {
+        let info_ro = info.read().await;
+        Ok(info_ro.replication.role.clone())
     }
 
     pub async fn has_replica(info: Arc<RwLock<Info>>, addr: &SocketAddr) -> Result<bool, RedisError> {

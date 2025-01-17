@@ -2,7 +2,7 @@ use std::{collections::HashSet, net::SocketAddr};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct ReplicationInfo {
-    role: String,
+    pub(crate) role: String,
     pub(crate) master_replid: String,
     pub(crate) master_repl_offset: i16,
     pub(crate) connected_slaves: u16,

@@ -5,9 +5,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use log::trace;
 
-use crate::{Config, Operation, RDBError, RedisError, SetExpiryArgs, SetMap};
+use crate::ops::Operation;
+use crate::{Config, RDBError, RedisError, SetExpiryArgs, SetMap};
 
-const RDB_MAGIC: &[u8] = b"REDIS";
+pub(crate) const RDB_MAGIC: &[u8] = b"REDIS";
 const RDB_MIN_VERSION: u32 = 10;
 const RDB_MAX_VERSION: u32 = 12;
 
@@ -428,9 +429,10 @@ mod rdb_parser {
     use super::{
         RdbAuxField, RdbLengthEncoding, RdbOpCode, RdbParser, RdbStringEncoding, RdbStringInteger,
     };
-    use crate::{Config, Operation, RDBError, RedisError, SetExpiryArgs, SetMap};
+    use crate::rdb::Operation;
+    use crate::{Config, RDBError, RedisError, SetExpiryArgs, SetMap};
     // use crate::{
-    //     resp::Operation,
+    //     resp::OperationV2,
     //     state::{
     //         RDBError, RdbAuxField, RdbLengthEncoding, RdbOpCode, RdbSelectDb, RdbStringEncoding,
     //         RdbStringInteger, RedisError, SetExpiryArgs, SetMap,
@@ -452,18 +454,10 @@ mod rdb_parser {
     #[test]
     fn test_decode_magic() {
         let invalid_data = RdbParser::decode_magic(&mut Cursor::new(b"RED"));
-        assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         let invalid_magic = RdbParser::decode_magic(&mut Cursor::new(b"FOOBAR"));
-        assert!(invalid_magic.is_err());
-        assert_eq!(
-            invalid_magic.unwrap_err(),
-            RedisError::RDB(RDBError::MissingMagicString)
-        );
+        assert!(matches!(invalid_magic, Err(RedisError::RDB(RDBError::MissingMagicString))));
 
         let valid_magic = RdbParser::decode_magic(&mut Cursor::new(b"REDIS0100"));
         assert!(valid_magic.is_ok());
@@ -472,18 +466,10 @@ mod rdb_parser {
     #[test]
     fn test_decode_version() {
         let invalid_data = RdbParser::decode_version(&mut Cursor::new(b"RED"));
-        assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         let invalid_ver = RdbParser::decode_version(&mut Cursor::new(b"0100FOOBAR"));
-        assert!(invalid_ver.is_err());
-        assert_eq!(
-            invalid_ver.unwrap_err(),
-            RedisError::RDB(RDBError::UnsupportedVersion("100".to_string()))
-        );
+        assert!(matches!(invalid_ver, Err(RedisError::RDB(RDBError::UnsupportedVersion(_)))));
 
         let valid_ver = RdbParser::decode_version(&mut Cursor::new(b"0010FOOBAR"));
         assert!(valid_ver.is_ok());
@@ -493,11 +479,7 @@ mod rdb_parser {
     #[test]
     fn test_decode_length_encoding() {
         let invalid_data = RdbParser::decode_length_encoding(&mut Cursor::new(b""));
-        assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         // Test case where msb is 0
         let valid_msb_0 = RdbParser::decode_length_encoding(&mut Cursor::new(b"\x1F"));
@@ -536,11 +518,7 @@ mod rdb_parser {
     #[test]
     fn test_decode_string_encoding() {
         let invalid_data = RdbParser::decode_string_encoding(&mut Cursor::new(b""));
-        assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         // Test case where msb is not 3
         let valid_len_prefix = RdbParser::decode_string_encoding(&mut Cursor::new(b"\x03foo")); // len 3 and string "foo"
@@ -591,10 +569,7 @@ mod rdb_parser {
     fn test_decode_aux_field() {
         let invalid_data = RdbParser::decode_aux_field(&mut Cursor::new(b""));
         assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         let valid_aux_field =
             RdbParser::decode_aux_field(&mut Cursor::new(b"\x03\x66\x6F\x6F\x03\x66\x6F\x6F")); // key "foo" and value "foo"
@@ -607,11 +582,7 @@ mod rdb_parser {
     #[test]
     fn test_decode_resizedb() {
         let invalid_data = RdbParser::decode_resizedb(&mut Cursor::new(b"\xC3\x04"));
-        assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::InvalidLengthEncoding)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::InvalidLengthEncoding))));
 
         let valid_resizedb = RdbParser::decode_resizedb(&mut Cursor::new(b"\x03\x04")); // resizedb=3, expires=4
         assert!(valid_resizedb.is_ok());
@@ -623,11 +594,7 @@ mod rdb_parser {
     #[test]
     fn test_decode_expiry() {
         let invalid_data = RdbParser::decode_expiry(&mut Cursor::new(b""));
-        assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         let valid_expiry = RdbParser::decode_expiry(&mut Cursor::new(b"\x61\x56\x4F\x80")); // expiry=1633046400
         assert!(valid_expiry.is_ok());
@@ -637,11 +604,7 @@ mod rdb_parser {
     #[test]
     fn test_decode_expiry_ms() {
         let invalid_data = RdbParser::decode_expiry_ms(&mut Cursor::new(b""));
-        assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         let valid_expiry =
             RdbParser::decode_expiry_ms(&mut Cursor::new(b"\x00\x00\x01\x7C\x39\x26\x8C\00")); // expiry_ms=1633046400000
@@ -653,10 +616,7 @@ mod rdb_parser {
     fn test_decode_key_value() {
         let invalid_data = RdbParser::decode_key_value(&mut Cursor::new(b""), None);
         assert!(invalid_data.is_err());
-        assert_eq!(
-            invalid_data.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_data, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         // Test case where val_type is None
         let valid_key_value = RdbParser::decode_key_value(
@@ -682,39 +642,28 @@ mod rdb_parser {
     #[test]
     fn test_decode() {
         // Testcase for invalid data
-        let invalid_parser = RdbParser::decode(&mut Cursor::new(b"0003FOOBAR"));
-        assert!(invalid_parser.is_err());
-        assert_eq!(
-            invalid_parser.unwrap_err(),
-            RedisError::RDB(RDBError::MissingMagicString)
-        );
+        assert!(matches!(RdbParser::decode(&mut Cursor::new(b"0003FOOBAR")), Err(RedisError::RDB(RDBError::MissingMagicString))));
 
         // Testcase for invalid version
         let invalid_ver =
             RdbParser::decode(&mut Cursor::new(b"REDIS0100\xFE\x01\xFA\x03foo\x03bar\xFF"));
-        assert!(invalid_ver.is_err());
-        assert_eq!(
-            invalid_ver.unwrap_err(),
-            RedisError::RDB(RDBError::UnsupportedVersion("100".to_string()))
-        );
+        assert!(matches!(invalid_ver, Err(RedisError::RDB(RDBError::UnsupportedVersion(_)))));
+        assert!(matches!(invalid_ver, Err(RedisError::RDB(RDBError::UnsupportedVersion(_)))));
+        // assert_eq!(matches!(
+        //     invalid_ver,
+        //     Err(RedisError::RDB(RDBError::UnsupportedVersion("100".to_string())))
+        // ));
 
         // Testcase for missing SelectDB
         let invalid_eof =
             RdbParser::decode(&mut Cursor::new(b"REDIS0010\xFA\x03foo\x03bar\x03bar")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
-        assert!(invalid_eof.is_err());
-        assert_eq!(
-            invalid_eof.unwrap_err(),
-            RedisError::RDB(RDBError::MissingDbNumber)
-        );
+        // assert!(invalid_eof.is_err());
+        assert!(matches!(invalid_eof, Err(RedisError::RDB(RDBError::MissingDbNumber))));
 
         // Testcase for missing bytes or invalid EOF
         let invalid_eof =
             RdbParser::decode(&mut Cursor::new(b"REDIS0010\xFE\x01\xFA\x03foo\x03bar")); // \x03\x66\x6F\x6F\x03\x66\x6F\x6F
-        assert!(invalid_eof.is_err());
-        assert_eq!(
-            invalid_eof.unwrap_err(),
-            RedisError::RDB(RDBError::MissingBytes)
-        );
+        assert!(matches!(invalid_eof, Err(RedisError::RDB(RDBError::MissingBytes))));
 
         // Testcase for valid RDB with only auxiliary keys
         let valid_aux_parser =

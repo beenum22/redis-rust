@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
 use bytes::{Bytes, BytesMut};
 use clap::Parser;
+use server::RedisServer;
 use core::str;
 use log::{info, log_enabled, Level, LevelFilter};
 use std::char::ToLowercase;
@@ -22,10 +23,7 @@ mod state;
 use config::{Config, ConfigParam};
 use error::{RDBError, RedisError};
 use info::{Info, InfoOperation, ReplicationInfo};
-use ops::Operation;
 use rdb::RdbParser;
-use resp::{RespParser, RespType};
-use server::RedisServer;
 use state::{State, SetExpiryArgs, SetMap, SetOverwriteArgs};
 
 struct RedisBuffer {

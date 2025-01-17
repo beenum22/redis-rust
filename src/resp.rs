@@ -1,33 +1,20 @@
-use bytes::Bytes;
-use core::str;
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use log::trace;
-use std::{
-    alloc::System,
-    collections::HashMap,
-    io::Read,
-    str::FromStr,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use tokio_util::codec::{Decoder, Encoder};
+use core::str;
 
-use crate::{
-    config::ConfigPair, error::RespError, info::InfoOperation, rdb::RdbParser, ConfigParam, Operation, RedisBuffer, RedisError, SetExpiryArgs, SetMap, SetOverwriteArgs
-};
+use crate::error::{RedisError, RespError};
+use crate::rdb::RDB_MAGIC;
 
-#[derive(Debug)]
-struct RespValueIndex {
-    start: usize,
-    end: usize,
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq, Debug)]
 pub(crate) enum RespType {
     String(String),
     Error(String),
     Integer(i64),
     BulkString(String),
-    Array(Vec<RespType>),
+    Array(Vec<Self>),
     Null,
-    Bytes(Bytes),
+    RDB(Bytes),
     //     Boolean(bool),
     //     Double(f32),
     //     BigNumber(i128),
@@ -39,395 +26,515 @@ pub(crate) enum RespType {
     //     Push(String)
 }
 
-impl RespType {
+pub(crate) struct RespParser {
+    // raw: &BytesMut,
+}
+
+impl RespParser {
+    pub(crate) fn new() -> Self {
+        Self { }
+    }
+}
+
+impl RespParser {
     const CRLF: &[u8; 2] = b"\r\n";
 
-    pub(crate) fn decode(raw: &mut RedisBuffer) -> Result<RespType, RedisError> {
-        let type_ch = raw.buffer[raw.index];
-        raw.index += 1;
-        match type_ch {
-            b'+' => Ok(Self::String(Self::decode_string(raw)?)),
-            b'-' => Ok(Self::Error(Self::decode_error(raw)?)),
-            b'$' => Self::decode_bulk_string(raw),
-            b':' => Ok(Self::Integer(Self::decode_integer(raw)?)),
-            b'*' => Ok(Self::Array(Self::decode_array(raw)?)),
-            b'_' => match Self::decode_null(raw)?.is_none() {
-                true => Ok(Self::Null),
-                false => Err(RedisError::RESP(RespError::InvalidValue)),
-            },
-            _ => Err(RedisError::RESP(RespError::UnknownType)),
-        }
-    }
-
-    pub(crate) fn encode(wtype: RespType) -> Result<Bytes, RedisError> {
-        match wtype {
-            Self::String(val) => Self::encode_string(val),
-            Self::Integer(val) => Self::encode_integer(val),
-            Self::BulkString(val) => Self::encode_bulk_string(val),
-            Self::Bytes(val) => Self::encode_bulkstring_without_crlf(val),
-            Self::Array(val) => Self::encode_array(val),
-            Self::Null => Self::encode_null(),
-            Self::Error(val) => Self::encode_error(val),
-            _ => Err(RedisError::RESP(RespError::UnsupportedType)),
-        }
-    }
-
-    fn _get_value(raw: &mut RedisBuffer) -> Result<Option<RespValueIndex>, RedisError> {
-        let mut val = RespValueIndex {
-            start: raw.index,
-            end: raw.index,
-        };
-        match raw.buffer[raw.index..]
-            .windows(2)
-            .position(|window| window == Self::CRLF)
-        {
-            Some(index) => {
-                if index == 0 {
-                    return Ok(None);
-                }
-
-                if index + 2 == raw.buffer[raw.index..].len() {
-                    // val.end += index + 1;
-                    val.end += index - 1;
-                    raw.index += index + 1;
-                } else {
-                    val.end += index - 1;
-                    raw.index += index + 2;
-                }
-                Ok(Some(val))
+    fn find_crlf(raw: &BytesMut) -> Option<usize> {
+        let special: &[u8] = &[b'$', b'*'];
+        if let Some(pos) = raw.windows(2).position(|w| w == Self::CRLF) {
+            if pos > 0 && raw[1..pos].iter().any(|&b| special.contains(&b)) {
+                return None
             }
-            None => Err(RedisError::RESP(RespError::CRLFMissing)),
+            return Some(pos);
         }
+        None
     }
 
-    // TODO: Refactor and improve parsing here. Too many Vecs in there.
-    fn encode_bulkstring_without_crlf(val: Bytes) -> Result<Bytes, RedisError> {
-        let mut bytes_len = format!("${}\r\n", val.len()).as_bytes().to_vec();
-        bytes_len.extend(val);
-        Ok(Bytes::from(bytes_len))
-    }
-
-    fn decode_string(raw: &mut RedisBuffer) -> Result<String, RedisError> {
-        let value_index = Self::_get_value(raw)?;
-        match value_index {
+    fn decode_integer(&mut self, raw: &mut BytesMut) -> Result<Option<RespType>, RedisError> {
+        match RespParser::find_crlf(raw) {
             Some(index) => {
-                let buff_ref = &raw.buffer[index.start..index.end + 1];
-                String::from_utf8(buff_ref.to_vec())
-                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
-            }
-            None => Err(RedisError::RESP(RespError::InvalidValue)),
-        }
-    }
-
-    fn encode_string(val: String) -> Result<Bytes, RedisError> {
-        Ok(Bytes::from(format!("+{}\r\n", val)))
-    }
-
-    fn decode_error(raw: &mut RedisBuffer) -> Result<String, RedisError> {
-        // TODO: It might have multiple CRLFs. Handle them all. Currently, it only fetches till first occurrence.
-        match Self::_get_value(raw)? {
-            Some(index) => {
-                let buff_ref = &raw.buffer[index.start..index.end + 1];
-                String::from_utf8(buff_ref.to_vec())
-                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))
-            }
-            None => Err(RedisError::RESP(RespError::InvalidValue)),
-        }
-    }
-
-    fn encode_error(val: String) -> Result<Bytes, RedisError> {
-        Ok(Bytes::from(format!("-Err {}\r\n", val)))
-    }
-
-    fn decode_integer(raw: &mut RedisBuffer) -> Result<i64, RedisError> {
-        let mut value_index = Self::_get_value(raw)?;
-        match value_index {
-            Some(index) => {
-                let value_str = str::from_utf8(&raw.buffer[index.start..index.end + 1])
-                    .map_err(|err| RedisError::RESP(RespError::UTFDecodingFailed))?;
-                value_str
+                let value_str = String::from_utf8(raw[1..index].to_vec())
+                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))?;
+                let value_int = value_str
                     .parse::<i64>()
-                    .map_err(|_| RedisError::RESP(RespError::IntegerParsingFailed))
-            }
-            None => Err(RedisError::RESP(RespError::InvalidValue)),
-        }
-    }
-
-    fn encode_integer(val: i64) -> Result<Bytes, RedisError> {
-        Ok(Bytes::from(format!(":{}\r\n", val.to_string())))
-    }
-
-    fn decode_bulk_string(raw: &mut RedisBuffer) -> Result<Self, RedisError> {
-        // Get Bulk String size
-        let count = Self::decode_integer(raw)?;
-        match Self::_get_value(raw) {
-            Ok(Some(val)) => {
-                if val.end - val.start + 1 != count as usize {
-                    return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
-                }
-                let buff_ref = &raw.buffer[val.start..val.end + 1];
-                Ok(Self::BulkString(
-                    String::from_utf8(buff_ref.to_vec())
-                        .map_err(|_err| RedisError::RESP(RespError::UTFDecodingFailed))?,
-                ))
-            }
-            Ok(None) => Ok(Self::BulkString("".to_string())),
-            Err(RedisError::RESP(RespError::CRLFMissing)) => {
-                if raw.buffer[raw.index..].len() != count as usize {
-                    return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
-                }
-                Ok(Self::Bytes(Bytes::from(raw.buffer[raw.index..].to_vec())))
-            }
-            Err(_) => Err(RedisError::ParsingError),
-        }
-    }
-
-    fn encode_bulk_string(val: String) -> Result<Bytes, RedisError> {
-        Ok(Bytes::from(format!("${}\r\n{}\r\n", val.len(), val)))
-    }
-
-    fn decode_array(raw: &mut RedisBuffer) -> Result<Vec<RespType>, RedisError> {
-        let count = Self::decode_integer(raw)?;
-        let mut array_val: Vec<RespType> = Vec::with_capacity(count as usize);
-        for _i in 0..count as usize {
-            let val = Self::decode(raw)?;
-            array_val.push(val)
-        }
-        Ok(array_val)
-    }
-
-    fn encode_array(val: Vec<RespType>) -> Result<Bytes, RedisError> {
-        let mut enc_val = format!("*{}\r\n", val.len());
-        for i in val {
-            enc_val.push_str(
-                str::from_utf8(&Self::encode(i).unwrap())
-                    .map_err(|err| RedisError::RESP(RespError::UTFDecodingFailed))?,
-            );
-        }
-        Ok(Bytes::from(enc_val))
-    }
-
-    fn decode_null(raw: &mut RedisBuffer) -> Result<Option<String>, RedisError> {
-        match Self::_get_value(raw)? {
-            Some(_) => Err(RedisError::RESP(RespError::InvalidValue)),
+                    .map_err(|_| RedisError::RESP(RespError::IntegerParsingFailed))?;
+                raw.advance(index + RespParser::CRLF.len());
+                Ok(Some(RespType::Integer(value_int)))
+            },
             None => Ok(None),
         }
     }
 
-    fn encode_null() -> Result<Bytes, RedisError> {
+    fn encode_integer(&mut self, val: i64, raw: &mut BytesMut) -> Result<(), RedisError> {
+        raw.put(format!(":{}\r\n", val.to_string()).as_bytes());
+        Ok(())
+    }
+
+    fn decode_string(&mut self, raw: &mut BytesMut) -> Result<Option<RespType>, RedisError> {
+        match RespParser::find_crlf(raw) {
+            Some(index) => {
+                let value_str = String::from_utf8(raw[1..index].to_vec())
+                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))?;
+                raw.advance(index + RespParser::CRLF.len());
+                Ok(Some(RespType::String(value_str)))
+            },
+            None => Ok(None),
+        }
+    }
+
+    fn encode_string(&mut self, val: String, raw: &mut BytesMut) -> Result<(), RedisError> {
+        raw.put(format!("+{}\r\n", val).as_bytes());
+        Ok(())
+    }
+
+    fn decode_bulk_string(&mut self, raw: &mut BytesMut) -> Result<Option<RespType>, RedisError> {
+        let count = match self.decode_integer(raw)? {
+            Some(RespType::Integer(val)) => val,
+            Some(_) => return Ok(None),
+            None => return Ok(None),
+        };
+        match RespParser::find_crlf(raw) {
+            Some(index) => {
+                if index != count as usize {
+                    return Err(RedisError::RESP(RespError::IncorrectBulkStringSize));
+                }
+                let value_str = String::from_utf8(raw[..index].to_vec())
+                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))?;
+                raw.advance(index + RespParser::CRLF.len());
+                Ok(Some(RespType::BulkString(value_str)))
+            },
+            None => {
+                if raw.len() > 4 && &raw[..5] == RDB_MAGIC {
+                    let bytes = Bytes::copy_from_slice(&raw[..count as usize]);
+                    raw.advance(count as usize);
+                    return Ok(Some(RespType::RDB(bytes)))
+                }
+                Ok(None)
+            },
+        }
+    }
+
+    fn encode_bulk_string(&mut self, val: String, raw: &mut BytesMut) -> Result<(), RedisError> {
+        raw.put(format!("${}\r\n{}\r\n", val.len(), val).as_bytes());
+        Ok(())
+    }
+
+    fn decode_array(&mut self, raw: &mut BytesMut) -> Result<Option<RespType>, RedisError> {
+        let count = match self.decode_integer(raw)? {
+            Some(RespType::Integer(val)) => val,
+            Some(_) => return Ok(None),
+            None => return Ok(None),
+        };
+        let mut array_val: Vec<RespType> = Vec::with_capacity(count as usize);
+        for _i in 0..count as usize {
+            // let val = Self::decode(raw)?;
+            match self.decode(raw)? {
+                Some(val) => array_val.push(val),
+                None => return Ok(None),
+            }
+        }
+        Ok(Some(RespType::Array(array_val)))
+    }
+
+    fn encode_array(&mut self, val: Vec<RespType>, raw: &mut BytesMut) -> Result<(), RedisError> {
+        raw.put(format!("*{}\r\n", val.len()).as_bytes());
+        for i in val {
+            self.encode(i, raw)?;
+        }
+        Ok(())
+    }
+
+    fn decode_error(&mut self, raw: &mut BytesMut) -> Result<Option<RespType>, RedisError> {
+        // TODO: It might have multiple CRLFs. Handle them all. Currently, it only fetches till first occurrence.
+
+        match RespParser::find_crlf(raw) {
+            Some(index) => {
+                let value_str = String::from_utf8(raw[1..index].to_vec())
+                    .map_err(|_| RedisError::RESP(RespError::UTFDecodingFailed))?;
+                
+                raw.advance(index + RespParser::CRLF.len());
+                Ok(Some(RespType::Error(value_str)))
+            },
+            None => Ok(None),
+        }
+    }
+
+    fn encode_error(&mut self, val: String, raw: &mut BytesMut) -> Result<(), RedisError> {
+        raw.put(format!("-Err {}\r\n", val).as_bytes());
+        Ok(())
+    }
+
+    fn decode_null(&mut self, raw: &mut BytesMut) -> Result<Option<RespType>, RedisError> {
+        match RespParser::find_crlf(raw) {
+            Some(index) => {
+                if index != 1 {
+                    return Ok(None)
+                }
+                raw.advance(index + RespParser::CRLF.len());
+                Ok(Some(RespType::Null))
+            },
+            None => Ok(None),
+        }
+    }
+
+    fn encode_null(&mut self, raw: &mut BytesMut) -> Result<(), RedisError> {
         // TODO: Commented out in favor of BulkString Null to support RESP 2 tests. Fix later for RESP 3.
         // Ok(Bytes::from("_\r\n"))
-        Ok(Bytes::from("$-1\r\n"))
+        raw.put("$-1\r\n".as_bytes());
+        Ok(())
+    }
+
+    // TODO: Refactor and improve parsing here. Too many Vecs in there.
+    fn encode_rdb(&mut self, val: Bytes, raw: &mut BytesMut) -> Result<(), RedisError> {
+        let mut bytes_len = format!("${}\r\n", val.len()).as_bytes().to_vec();
+        bytes_len.extend(val);
+        raw.extend_from_slice(&bytes_len);
+        Ok(())
     }
 }
 
-pub(crate) struct RespParser {
-    raw: RedisBuffer,
+impl Decoder for RespParser {
+    type Item = RespType;
+    type Error = RedisError;
+
+    fn decode(&mut self, raw: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+        if raw.len() == 0 {
+            return Ok(None)
+        };
+        match raw[0] {
+            b'+' => self.decode_string(raw),
+            b'-' => self.decode_error(raw),
+            b'$' => self.decode_bulk_string(raw),
+            b':' => self.decode_integer(raw),
+            b'*' => self.decode_array(raw),
+            b'_' => self.decode_null(raw),
+            _ => Err(RedisError::RESP(RespError::UnknownType)),
+        }
+    }
 }
 
-impl RespParser {
-    pub(crate) fn new(raw_data: RedisBuffer) -> RespParser {
-        Self { raw: raw_data }
-    }
+impl Encoder<RespType> for RespParser {
+    type Error = RedisError;
 
-    pub(crate) fn decode(raw: &mut RedisBuffer) -> Result<Operation, RedisError> {
-        let word_type = RespType::decode(raw)?;
-        Operation::decode(raw, word_type)
-    }
-
-    pub(crate) fn encode(word: Operation) -> Result<Bytes, RedisError> {
-        let word_type = Operation::encode(word)?;
-        let encoded_bytes = RespType::encode(word_type)?;
-        Ok(encoded_bytes)
+    fn encode(&mut self, item: RespType, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        match item {
+            RespType::String(val) => self.encode_string(val, dst)?,
+            RespType::Integer(val) => self.encode_integer(val, dst)?,
+            RespType::BulkString(val) => self.encode_bulk_string(val, dst)?,
+            // RespTypeV2::Bytes(val) => Self::encode_bulkstring_without_crlf(val),
+            RespType::Array(val) => self.encode_array(val, dst)?,
+            RespType::Null => self.encode_null(dst)?,
+            RespType::Error(val) => self.encode_error(val, dst)?,
+            RespType::RDB(val) => self.encode_rdb(val, dst)?,
+            _ => return Err(RedisError::RESP(RespError::UnsupportedType)),
+        }
+        Ok(())
     }
 }
+
 
 #[cfg(test)]
-mod redis_resp_type {
-    use bytes::Bytes;
+mod resp {
+    use bytes::{Buf, Bytes, BytesMut};
+    use tokio_util::codec::{Decoder, Encoder};
 
-    use crate::resp::{RedisError, RespType};
-    use crate::RedisBuffer;
-
-    #[test]
-    fn test__get_value() {
-        let mut buff = RedisBuffer {
-            buffer: Bytes::from("$5\r\nhello\r\n"),
-            index: 0,
-        };
-        buff.index += 1;
-
-        let word_1 = RespType::_get_value(&mut buff);
-        assert!(word_1.is_ok());
-        assert_eq!(word_1.as_ref().unwrap().as_ref().unwrap().start, 1);
-        assert_eq!(word_1.as_ref().unwrap().as_ref().unwrap().end, 1);
-        assert_eq!(buff.index, 4);
-
-        let word_2 = RespType::_get_value(&mut buff);
-        assert!(word_2.is_ok());
-        assert_eq!(word_2.as_ref().unwrap().as_ref().unwrap().start, 4);
-        assert_eq!(word_2.as_ref().unwrap().as_ref().unwrap().end, 8);
-        assert_eq!(buff.index, 10);
-
-        let mut empty_buff = RedisBuffer {
-            buffer: Bytes::from("$0\r\n\r\n"),
-            index: 0,
-        };
-        empty_buff.index += 1;
-        let empty_word_1 = RespType::_get_value(&mut empty_buff);
-        assert!(empty_word_1.is_ok());
-        assert_eq!(empty_word_1.as_ref().unwrap().as_ref().unwrap().start, 1);
-        assert_eq!(empty_word_1.as_ref().unwrap().as_ref().unwrap().end, 1);
-        assert_eq!(empty_buff.index, 4);
-
-        let empty_word_2 = RespType::_get_value(&mut empty_buff);
-        assert!(empty_word_2.is_ok());
-        assert!(empty_word_2.as_ref().unwrap().is_none());
-        assert_eq!(empty_buff.index, 4);
-    }
+    use crate::{error::{RedisError, RespError}, resp::{RespParser, RespType}};
 
     #[test]
-    fn test_decode_string() {
-        let mut buff = RedisBuffer {
-            buffer: Bytes::from("+hello\r\n"),
-            index: 0,
-        };
-        buff.index += 1;
-        let str_val = RespType::decode_string(&mut buff);
-        assert!(str_val.is_ok());
-        assert_eq!(str_val.unwrap(), "hello");
+    fn test_find_crlf() {
+        let mut buff = BytesMut::from(":2\r\n:-2\r\n:23");
+        assert_eq!(RespParser::find_crlf(&mut buff), Some(2));
 
-        buff.index = 0;
-
-        let mut empty_buff = RedisBuffer {
-            buffer: Bytes::from("+\r\n"),
-            index: 0,
-        };
-        empty_buff.index += 1;
-        let empty_val = RespType::decode_string(&mut empty_buff);
-        assert!(empty_val.is_err());
-    }
-
-    #[test]
-    fn test_encode_string() {
-        let str_val = RespType::encode(RespType::String("hello".to_string()));
-        assert!(str_val.is_ok());
-        assert_eq!(str_val.unwrap(), Bytes::from("+hello\r\n"));
+        let mut buff = BytesMut::from("hello$5\r\nworld\r\n:-2\r\n:23");
+        assert_eq!(RespParser::find_crlf(&mut buff), None);
     }
 
     #[test]
     fn test_decode_integer() {
-        let mut buff = RedisBuffer {
-            buffer: Bytes::from(":2\r\n"),
-            index: 0,
-        };
-        buff.index += 1;
-        let int_val = RespType::decode_integer(&mut buff);
-        assert!(int_val.is_ok());
-        assert_eq!(int_val.unwrap(), 2);
+        let mut buff = BytesMut::from(":2\r\n:-2\r\n:23");
+        let mut parser = RespParser {};
 
-        buff.index = 0;
+        let unsigned = parser.decode_integer(&mut buff);
+        assert!(unsigned.is_ok());
+        assert!(unsigned.as_ref().unwrap().is_some());
+        assert_eq!(unsigned.unwrap().unwrap(), RespType::Integer(2));
 
-        let mut signed_buff = RedisBuffer {
-            buffer: Bytes::from(":-2\r\n"),
-            index: 0,
-        };
-        signed_buff.index += 1;
-        let int_val = RespType::decode_integer(&mut signed_buff);
-        assert!(int_val.is_ok());
-        assert_eq!(int_val.unwrap(), -2);
+        let signed = parser.decode_integer(&mut buff);
+        assert!(signed.is_ok());
+        assert!(signed.as_ref().unwrap().is_some());
+        assert_eq!(signed.unwrap().unwrap(), RespType::Integer(-2));
+
+        let signed = parser.decode_integer(&mut buff);
+        assert!(signed.is_ok());
+        assert!(signed.as_ref().unwrap().is_none());
     }
 
     #[test]
     fn test_encode_integer() {
-        let val = RespType::encode(RespType::Integer(2 as i64));
-        assert!(val.is_ok());
-        assert_eq!(val.unwrap(), Bytes::from(":2\r\n"));
+        let mut buff = BytesMut::new();
+        let mut parser = RespParser {};
 
-        let signed_val = RespType::encode(RespType::Integer(-2 as i64));
-        assert!(signed_val.is_ok());
-        assert_eq!(signed_val.unwrap(), Bytes::from(":-2\r\n"));
+        let val = parser.encode_integer(42, &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from(":42\r\n"));
+
+        let val = parser.encode_integer(-42, &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from(":42\r\n:-42\r\n"));
+    }
+
+    #[test]
+    fn test_decode_string() {
+        let mut buff = BytesMut::from("+hello\r\n+\r\n");
+        let mut parser = RespParser {};
+
+        let str_val = parser.decode_string(&mut buff);
+        assert!(str_val.is_ok());
+        assert!(str_val.as_ref().unwrap().is_some());
+        assert_eq!(str_val.unwrap().unwrap(), RespType::String("hello".to_string()));
+
+        let empty_val = parser.decode_string(&mut buff);
+        assert!(empty_val.is_ok());
+        assert!(empty_val.as_ref().unwrap().is_some());
+        assert_eq!(empty_val.unwrap().unwrap(), RespType::String("".to_string()));
+    }
+
+    #[test]
+    fn test_encode_string() {
+        let mut buff = BytesMut::new();
+        let mut parser = RespParser {};
+        let str_val = parser.encode_string("hello".to_string(), &mut buff);
+        assert!(str_val.is_ok());
+        assert_eq!(buff, BytesMut::from("+hello\r\n"));
     }
 
     #[test]
     fn test_decode_bulk_string() {
-        let mut buff = RedisBuffer {
-            buffer: Bytes::from("$5\r\nhello\r\n"),
-            index: 0,
-        };
-        buff.index += 1;
-        let bulk_str_val = RespType::decode_bulk_string(&mut buff).unwrap();
-        assert_eq!(bulk_str_val, RespType::BulkString("hello".to_string()));
+        let mut buff = BytesMut::from("$5\r\nhello\r\n$0\r\n\r\n$5\r\nworld");
+        let mut parser = RespParser {};
 
-        buff.index = 0;
+        let bulk_str_val = parser.decode_bulk_string(&mut buff);
+        assert!(bulk_str_val.is_ok());
+        assert!(bulk_str_val.as_ref().unwrap().is_some());
+        assert_eq!(bulk_str_val.unwrap().unwrap(), RespType::BulkString("hello".to_string()));
 
-        let mut empty_buff = RedisBuffer {
-            buffer: Bytes::from("$0\r\n\r\n"),
-            index: 0,
-        };
-        empty_buff.index += 1;
-        let empty_val = RespType::decode_bulk_string(&mut empty_buff);
+        let empty_val = parser.decode_bulk_string(&mut buff);
         assert!(empty_val.is_ok());
-        assert_eq!(empty_val.unwrap(), RespType::BulkString("".to_string()));
+        assert!(empty_val.as_ref().unwrap().is_some());
+        assert_eq!(empty_val.unwrap().unwrap(), RespType::BulkString("".to_string()));
+    
+        let incomplete_val = parser.decode_bulk_string(&mut buff);
+        assert!(incomplete_val.is_ok());
+        assert!(incomplete_val.as_ref().unwrap().is_none());
+
+        let mut buff = BytesMut::from("$2\r\nfoo\r\n");
+        let invalid_len = parser.decode_bulk_string(&mut buff);
+        assert!(invalid_len.is_err());
+        assert!(matches!(invalid_len, Err(RedisError::RESP(RespError::IncorrectBulkStringSize))));
+
+        let mut rdb_buff = BytesMut::from("$17\r\nREDISfoobarfoobar");
+        let rdb = parser.decode_bulk_string(&mut rdb_buff);
+        assert!(rdb.is_ok());
+        assert!(rdb.as_ref().unwrap().is_some());
+        assert_eq!(rdb.unwrap().unwrap(), RespType::RDB(Bytes::from("REDISfoobarfoobar")));
     }
 
     #[test]
     fn test_encode_bulk_string() {
-        let val = RespType::encode(RespType::BulkString("hello".to_string()));
-        assert!(val.is_ok());
-        assert_eq!(val.unwrap(), Bytes::from("$5\r\nhello\r\n"));
+        let mut buff = BytesMut::new();
+        let mut parser = RespParser {};
 
-        let empty_val = RespType::encode(RespType::BulkString("".to_string()));
-        assert!(empty_val.is_ok());
-        assert_eq!(empty_val.unwrap(), Bytes::from("$0\r\n\r\n"));
+        let val = parser.encode_bulk_string(
+            "hello".to_string(),
+            &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("$5\r\nhello\r\n"));
+
+        let val = parser.encode_bulk_string(
+            "".to_string(),
+            &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("$5\r\nhello\r\n$0\r\n\r\n"));
     }
 
     #[test]
     fn test_decode_array() {
-        let mut buff = RedisBuffer {
-            buffer: Bytes::from("*3\r\n$3\r\nfoo\r\n$3\r\nbar\r\n:42\r\n"),
-            index: 0,
-        };
+        let mut buff = BytesMut::from("*3\r\n$3\r\nfoo\r\n$3\r\nbar\r\n:42\r\n");
+        let mut parser = RespParser {};
+
         let mut array = Vec::with_capacity(3);
         array.push(RespType::BulkString(String::from("foo")));
         array.push(RespType::BulkString(String::from("bar")));
         array.push(RespType::Integer(42));
-        buff.index += 1;
-        let array_val = RespType::decode_array(&mut buff);
-        assert!(array_val.is_ok(),);
-        assert_eq!(array_val.unwrap(), array);
+
+        let array_val = parser.decode_array(&mut buff);
+        assert!(array_val.is_ok());
+        assert!(array_val.as_ref().unwrap().is_some());
+        assert_eq!(array_val.unwrap().unwrap(), RespType::Array(array));
     }
 
     #[test]
     fn test_encode_array() {
-        let val = RespType::encode(RespType::Array(vec![
+        let mut buff = BytesMut::new();
+        let mut parser = RespParser {};
+
+        let val = parser.encode_array(vec![
             RespType::BulkString("hello".to_string()),
             RespType::BulkString("world".to_string()),
             RespType::BulkString("foo".to_string()),
-        ]));
+        ], &mut buff);
         assert!(val.is_ok());
         assert_eq!(
-            val.unwrap(),
-            Bytes::from("*3\r\n$5\r\nhello\r\n$5\r\nworld\r\n$3\r\nfoo\r\n")
+            buff,
+            BytesMut::from("*3\r\n$5\r\nhello\r\n$5\r\nworld\r\n$3\r\nfoo\r\n")
+        );
+
+        let val = parser.encode_array(
+            vec![],
+            &mut buff
+        );
+        assert!(val.is_ok());
+        assert_eq!(
+            buff,
+            BytesMut::from("*3\r\n$5\r\nhello\r\n$5\r\nworld\r\n$3\r\nfoo\r\n*0\r\n")
         );
     }
 
     #[test]
+    fn test_decode_error() {
+        let mut buff = BytesMut::from("-foo\r\n");
+        let mut parser = RespParser {};
+        let val = parser.decode_error(&mut buff);
+        assert!(val.is_ok());
+        assert_eq!(val.unwrap(), Some(RespType::Error("foo".to_string())));
+    }
+
+    #[test]
+    fn test_encode_error() {
+        let mut buff = BytesMut::new();
+        let mut parser = RespParser {};
+
+        let val = parser.encode_error("foo".to_string(), &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("-Err foo\r\n"));
+    }
+
+    #[test]
     fn test_decode_null() {
-        let mut buff = RedisBuffer {
-            buffer: Bytes::from("_\r\n"),
-            index: 0,
-        };
-        buff.index += 1;
-        let null_val = RespType::decode_null(&mut buff);
-        assert!(null_val.is_ok(),);
-        assert_eq!(null_val.unwrap(), None);
+        let mut buff = BytesMut::from("_\r\n");
+        let mut parser = RespParser {};
+        let val = parser.decode_null(&mut buff);
+        assert!(val.is_ok());
+        assert_eq!(val.unwrap(), Some(RespType::Null));
     }
 
     #[test]
     fn test_encode_null() {
-        let val = RespType::encode(RespType::Null);
+        let mut buff = BytesMut::new();
+        let mut parser = RespParser {};
+
+        let val = parser.encode_null(&mut buff);
         assert!(val.is_ok());
-        assert_eq!(val.unwrap(), Bytes::from("_\r\n"));
+        assert_eq!(buff, BytesMut::from("$-1\r\n"));
+    }
+
+    #[test]
+    fn test_decode() {
+        let mut buff = BytesMut::from("+hello\r\n$3\r\nfoo\r\n*3\r\n$3\r\nfoo\r\n$3\r\nbar\r\n:42\r\n-foo\r\n_\r\n$11\r\nREDISfoobar$3\r\nfoo\r\n");
+        let mut parser = RespParser {};
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap().unwrap(), RespType::String("hello".to_string()));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespType::BulkString("foo".to_string())));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespType::Array(
+            vec![
+                RespType::BulkString(String::from("foo")),
+                RespType::BulkString(String::from("bar")),
+                RespType::Integer(42),
+            ]
+        )));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespType::Error("foo".to_string())));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespType::Null));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespType::RDB(Bytes::from("REDISfoobar"))));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), Some(RespType::BulkString(String::from("foo"))));
+
+        let decode_next = parser.decode(&mut buff);
+        assert!(decode_next.is_ok());
+        assert_eq!(decode_next.unwrap(), None);
+    }
+
+    #[test]
+    fn test_encode() {
+        let mut buff = BytesMut::new();
+        let mut parser = RespParser {};
+
+        let val = parser.encode(RespType::String("foo".to_string()), &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("+foo\r\n"));
+
+        let val = parser.encode(RespType::BulkString("bar".to_string()), &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("+foo\r\n$3\r\nbar\r\n"));
+
+        let val = parser.encode(RespType::Null, &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("+foo\r\n$3\r\nbar\r\n$-1\r\n"));
+
+        let val = parser.encode(RespType::Error("err".to_string()), &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("+foo\r\n$3\r\nbar\r\n$-1\r\n-Err err\r\n"));
+
+        let val = parser.encode(RespType::Integer(42), &mut buff);
+        assert!(val.is_ok());
+        assert_eq!(buff, BytesMut::from("+foo\r\n$3\r\nbar\r\n$-1\r\n-Err err\r\n:42\r\n"));
+
+
+        // let mut buff = BytesMut::from("+hello\r\n$3\r\nfoo\r\n*3\r\n$3\r\nfoo\r\n$3\r\nbar\r\n:42\r\n-foo\r\n_\r\n");
+        // let mut parser = RespParserV2 {};
+
+        // let decode_next = parser.decode(&mut buff);
+        // assert!(decode_next.is_ok());
+        // assert_eq!(decode_next.unwrap().unwrap(), RespTypeV2::String("hello".to_string()));
+
+        // let decode_next = parser.decode(&mut buff);
+        // assert!(decode_next.is_ok());
+        // assert_eq!(decode_next.unwrap(), Some(RespTypeV2::BulkString("foo".to_string())));
+
+        // let decode_next = parser.decode(&mut buff);
+        // assert!(decode_next.is_ok());
+        // assert_eq!(decode_next.unwrap(), Some(RespTypeV2::Array(
+        //     vec![
+        //         RespTypeV2::BulkString(String::from("foo")),
+        //         RespTypeV2::BulkString(String::from("bar")),
+        //         RespTypeV2::Integer(42),
+        //     ]
+        // )));
+
+        // let decode_next = parser.decode(&mut buff);
+        // assert!(decode_next.is_ok());
+        // assert_eq!(decode_next.unwrap(), Some(RespTypeV2::Error("foo".to_string())));
+
+        // let decode_next = parser.decode(&mut buff);
+        // assert!(decode_next.is_ok());
+        // assert_eq!(decode_next.unwrap(), Some(RespTypeV2::Null));
     }
 }

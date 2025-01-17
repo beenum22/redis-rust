@@ -1,8 +1,7 @@
 use lzf::LzfError;
+use std::io::Error;
 
-use crate::ops::Operation;
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub(crate) enum RedisError {
     ParsingError,
     UnknownCommand,
@@ -17,6 +16,15 @@ pub(crate) enum RedisError {
     Connection(ConnectionError),
     RESP(RespError),
     Replica(ReplicaError),
+    Server(ServerError),
+    Operation(OperationError),
+    IOError(Error),
+}
+
+impl From<std::io::Error> for RedisError {
+    fn from(value: std::io::Error) -> Self {
+        RedisError::IOError(value)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -53,6 +61,7 @@ pub(crate) enum StateError {
 #[derive(Debug, PartialEq)]
 pub(crate) enum RespError {
     UnknownType,
+    InvalidType,
     InvalidValue,
     UnsupportedType,
     CRLFMissing,
@@ -63,8 +72,21 @@ pub(crate) enum RespError {
 }
 
 #[derive(Debug, PartialEq)]
+pub(crate) enum OperationError {
+    InvalidRespType,
+}
+
+#[derive(Debug, PartialEq)]
 pub(crate) enum ReplicaError {
     BroadcastFailed,
     RegistrationFailed,
     DeregistrationFailed,
+    StatusUknown,
+    ConfigurationFailed,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum ServerError {
+    TcpStreamFailure,
+    ReplicaRegistrationFailed
 }

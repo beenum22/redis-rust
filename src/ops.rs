@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use tokio_util::codec::Decoder;
 use std::{
     io::Cursor,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -7,20 +8,15 @@ use std::{
 use log::trace;
 
 use crate::{
-    config::{ConfigOperation, ConfigPair, ConfigParam},
-    error::RDBError,
-    error::RedisError,
-    info::{InfoOperation, ReplicationInfo},
-    rdb::RdbParser,
-    resp::RespType,
-    state::{SetExpiryArgs, SetMap, SetOverwriteArgs},
-    RedisBuffer,
+    config::{ConfigOperation, ConfigPair, ConfigParam}, error::{OperationError, RDBError, RedisError}, info::{InfoOperation, ReplicationInfo}, rdb::RdbParser, resp::RespType, state::{SetExpiryArgs, SetMap, SetOverwriteArgs}, RedisBuffer
 };
 
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum ReplicaConfigOperation {
     ListeningPort(u16),
     Capabilities(String),
+    GetAck(String),
+    Ack(u16),
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -39,34 +35,34 @@ impl Psync {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub(crate) enum OperationType {
+pub(crate) enum MessageType {
     Read,
     Write,
     Internal,
 }
 
-impl OperationType {
-    pub(crate) fn get_type(op: &Operation) -> OperationType {
+impl MessageType {
+    pub(crate) fn get_type(op: &Operation) -> MessageType {
         match &op {
-            Operation::Ping => OperationType::Read,
-            Operation::ReplicaConf(_) => OperationType::Write,
-            Operation::Psync(_) => OperationType::Write,  // Not sure.
-            Operation::Echo(_) => OperationType::Read,
-            Operation::EchoString(_) => OperationType::Read,
-            Operation::EchoBytes(_) => OperationType::Read,
-            Operation::Set(_) => OperationType::Write,
-            Operation::Get(_) => OperationType::Read,
+            Operation::Ping => MessageType::Read,
+            Operation::ReplicaConf(_) => MessageType::Write,
+            Operation::Psync(_) => MessageType::Write,  // Not sure.
+            Operation::Echo(_) => MessageType::Read,
+            Operation::EchoString(_) => MessageType::Read,
+            Operation::EchoBytes(_) => MessageType::Read,
+            Operation::Set(_) => MessageType::Write,
+            Operation::Get(_) => MessageType::Read,
             Operation::Config(config) => match config {
-                ConfigOperation::Get(_) => OperationType::Read,
-                ConfigOperation::Set(_) => OperationType::Write,
+                ConfigOperation::Get(_) => MessageType::Read,
+                ConfigOperation::Set(_) => MessageType::Write,
             },
-            Operation::Keys(_) => OperationType::Read,
-            Operation::Ok => OperationType::Read,
-            Operation::Nil => OperationType::Read,
-            Operation::EchoArray(_) => OperationType::Read,
-            Operation::Info(_) => OperationType::Read,
-            Operation::Error(_) => OperationType::Read,
-            _ => OperationType::Internal
+            Operation::Keys(_) => MessageType::Read,
+            Operation::Ok => MessageType::Read,
+            Operation::Nil => MessageType::Read,
+            Operation::EchoArray(_) => MessageType::Read,
+            Operation::Info(_) => MessageType::Read,
+            Operation::Error(_) => MessageType::Read,
+            _ => MessageType::Internal
         }
     }
 }
@@ -97,7 +93,7 @@ pub(crate) enum Operation {
 }
 
 impl Operation {
-    fn _decode_set(args: &[RespType]) -> Result<SetMap, RedisError> {
+    fn decode_set(args: &[RespType]) -> Result<SetMap, RedisError> {
         let mut set_args = SetMap {
             expiry: None,
             key: String::new(),
@@ -112,11 +108,11 @@ impl Operation {
         }
         set_args.key = match &args[0] {
             RespType::BulkString(val) => (*val).to_string(),
-            _ => return Err(RedisError::InvalidValueType),
+            _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
         };
         set_args.val = match &args[1] {
             RespType::BulkString(val) => (*val).to_string(),
-            _ => return Err(RedisError::InvalidValueType),
+            _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
         };
         let mut i: usize = 2;
         while i < args.len() {
@@ -143,7 +139,7 @@ impl Operation {
                                         );
                                         set_args.expiry = Some(SetExpiryArgs::EX(expiry_secs))
                                     }
-                                    _ => return Err(RedisError::InvalidValueType),
+                                    _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
                                 },
                                 None => return Err(RedisError::SyntaxError),
                             };
@@ -169,7 +165,7 @@ impl Operation {
                                         );
                                         set_args.expiry = Some(SetExpiryArgs::PX(expiry))
                                     }
-                                    _ => return Err(RedisError::InvalidValueType),
+                                    _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
                                 },
                                 None => return Err(RedisError::SyntaxError),
                             };
@@ -193,7 +189,7 @@ impl Operation {
                                             Some(UNIX_EPOCH + Duration::from_secs(expiry));
                                         set_args.expiry = Some(SetExpiryArgs::EXAT(expiry))
                                     }
-                                    _ => return Err(RedisError::InvalidValueType),
+                                    _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
                                 },
                                 None => return Err(RedisError::SyntaxError),
                             };
@@ -225,7 +221,7 @@ impl Operation {
                                             );
                                         }
                                     }
-                                    _ => return Err(RedisError::InvalidValueType),
+                                    _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
                                 },
                                 None => return Err(RedisError::SyntaxError),
                             };
@@ -236,7 +232,7 @@ impl Operation {
                         _ => return Err(RedisError::SyntaxError),
                     }
                 }
-                _ => return Err(RedisError::InvalidValueType),
+                _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
             }
             i += 1;
         }
@@ -287,7 +283,7 @@ impl Operation {
                 "dbfilename" => Ok(ConfigParam::DbFileName(None)),
                 _ => Ok(ConfigParam::Unknown),
             },
-            _ => return Err(RedisError::InvalidValueType),
+            _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
         }
     }
 
@@ -298,7 +294,7 @@ impl Operation {
 
         match &args[0] {
             RespType::BulkString(val) => Ok(val.to_owned()),
-            _ => return Err(RedisError::InvalidValueType),
+            _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
         }
     }
 
@@ -312,7 +308,7 @@ impl Operation {
                 "set" => Ok(ConfigOperation::Set(Self::decode_config_set(&args[1..])?)),
                 _ => return Err(RedisError::SyntaxError),
             },
-            _ => return Err(RedisError::InvalidValueType),
+            _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
         }
     }
 
@@ -328,7 +324,7 @@ impl Operation {
                     "dbfilename" => arr.push(ConfigParam::DbFileName(None)),
                     _ => arr.push(ConfigParam::Unknown),
                 },
-                _ => return Err(RedisError::InvalidValueType),
+                _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
             }
         }
         Ok(arr)
@@ -352,18 +348,18 @@ impl Operation {
                                 value: val_str.to_string(),
                             })
                         }
-                        _ => return Err(RedisError::InvalidValueType),
+                        _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
                     })),
                     "dbfilename" => arr.push(ConfigParam::DbFileName(match &pair[1] {
                         RespType::BulkString(val_str) => Some(ConfigPair {
                             key: key_str.to_string(),
                             value: val_str.to_string(),
                         }),
-                        _ => return Err(RedisError::InvalidValueType),
+                        _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
                     })),
                     _ => continue,
                 },
-                _ => return Err(RedisError::InvalidValueType),
+                _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
             };
         }
         Ok(arr)
@@ -377,7 +373,7 @@ impl Operation {
         }
         match &args[0] {
             RespType::BulkString(val) => Ok((*val).to_string()),
-            _ => return Err(RedisError::InvalidValueType),
+            _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
         }
     }
 
@@ -393,7 +389,7 @@ impl Operation {
                     "server" => arr.push(InfoOperation::Server),
                     _ => (),
                 },
-                _ => return Err(RedisError::InvalidValueType),
+                _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
             }
         }
         Ok(arr)
@@ -402,6 +398,9 @@ impl Operation {
     fn decode_replconf(args: &[RespType]) -> Result<Vec<ReplicaConfigOperation>, RedisError> {
         let mut replconf: Vec<ReplicaConfigOperation> = Vec::new();
         for chunk in args.chunks(2) {
+            if chunk.len() < 2 {
+                return Err(RedisError::SyntaxError)
+            }
             match (&chunk[0], &chunk[1]) {
                 (RespType::BulkString(key), RespType::BulkString(val)) => {
                     if key == "capa" {
@@ -412,9 +411,11 @@ impl Operation {
                                 .parse::<u16>()
                                 .map_err(|_| RedisError::ParsingError)?,
                         ));
+                    } else if key.to_lowercase().as_str() == "getack" {
+                        replconf.push(ReplicaConfigOperation::GetAck(val.to_owned()));
                     }
                 }
-                _ => (),
+                _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
             }
         }
         Ok(replconf)
@@ -428,11 +429,11 @@ impl Operation {
                     .parse::<i16>()
                     .map_err(|_| RedisError::ParsingError)?,
             )),
-            _ => return Err(RedisError::InvalidValueType),
+            _ => return Err(RedisError::Operation(OperationError::InvalidRespType)),
         }
     }
 
-    pub(crate) fn decode(raw: &mut RedisBuffer, word: RespType) -> Result<Self, RedisError> {
+    pub(crate) fn decode(word: RespType) -> Result<Self, RedisError> {
         trace!("RESP type to decode: {:?}", word);
         match word {
             RespType::String(res) => match res.to_lowercase().as_str() {
@@ -442,7 +443,7 @@ impl Operation {
                 _ => Err(RedisError::UnknownCommand),
             },
             RespType::BulkString(res) => Err(RedisError::UnknownCommand),
-            RespType::Bytes(res) => {
+            RespType::RDB(res) => {
                 let mut cursor = Cursor::new(res);
                 match RdbParser::decode(&mut cursor) {
                     Ok(parser) => Ok(Self::RdbFile(parser)),
@@ -466,7 +467,7 @@ impl Operation {
                         RespType::BulkString(val) => Ok(Self::Echo(val.clone())),
                         _ => todo!(),
                     },
-                    "set" => Ok(Self::Set(Self::_decode_set(&res[1..])?)),
+                    "set" => Ok(Self::Set(Self::decode_set(&res[1..])?)),
                     "get" => Ok(Self::Get(Self::_decode_get(&res[1..])?)),
                     // "config" => Ok(Self::Config(Self::_decode_config(&res[1..])?)),
                     "config" => Ok(Self::Config(Self::decode_config(&res[1..])?)),
@@ -502,6 +503,15 @@ impl Operation {
                             arr.push(RespType::BulkString("capa".to_string()));
                             arr.push(RespType::BulkString(cap.to_string()));
                         }
+                        ReplicaConfigOperation::GetAck(val) => {
+                            arr.push(RespType::BulkString("GETACK".to_string()));
+                            arr.push(RespType::BulkString(val.to_string()));
+                        },
+                        ReplicaConfigOperation::Ack(val) => {
+                            arr.push(RespType::BulkString("ACK".to_string()));
+                            arr.push(RespType::BulkString(val.to_string()));
+                        },
+                        _ => return Err(RedisError::UnknownCommand),
                     }
                 }
                 Ok(RespType::Array(arr))
@@ -513,7 +523,7 @@ impl Operation {
             ])),
             Operation::Echo(val) => Ok(RespType::BulkString(val)),
             Operation::EchoString(val) => Ok(RespType::String(val)),
-            Operation::EchoBytes(val) => Ok(RespType::Bytes(val)),
+            Operation::EchoBytes(val) => Ok(RespType::RDB(val)),
             Operation::EchoArray(val) => {
                 let mut arr: Vec<RespType> = Vec::new();
                 for i in 0..val.len() {
@@ -526,5 +536,42 @@ impl Operation {
             Operation::Error(val) => Ok(RespType::Error(val)),
             _ => Err(RedisError::UnknownCommand),
         }
+    }
+}
+
+#[cfg(test)]
+mod resp {
+    use clap::builder::Str;
+
+    use crate::{error::{OperationError, RedisError}, resp::RespParser, state::{SetExpiryArgs, SetMap, SetOverwriteArgs}};
+
+    use super::{Operation, RespType};
+
+    #[test]
+    fn test_decode_set() {
+        let set_resp = vec![
+            RespType::BulkString(String::from("SET")),
+            RespType::BulkString(String::from("foo")),
+            RespType::BulkString(String::from("bar")),
+            RespType::BulkString(String::from("ex")),
+            RespType::BulkString(String::from("15")),
+            RespType::BulkString(String::from("nx")),
+        ];
+
+        let setmap = Operation::decode_set(&set_resp[1..]);
+        assert!(setmap.is_ok());
+        assert_eq!(setmap.as_ref().unwrap().expiry, Some(SetExpiryArgs::EX(15)));
+        assert_eq!(setmap.as_ref().unwrap().key, String::from("foo"));
+        assert_eq!(setmap.as_ref().unwrap().val, String::from("bar"));
+        assert_eq!(setmap.as_ref().unwrap().overwrite, Some(SetOverwriteArgs::NX));
+        assert!(setmap.as_ref().unwrap().keepttl.is_none());
+        assert!(setmap.as_ref().unwrap().expiry_timestamp.is_some());
+
+        let invalid_set_resp = vec![
+            RespType::BulkString(String::from("SET")),
+            RespType::String(String::from("foo")),
+            RespType::BulkString(String::from("bar")),
+        ];
+        assert!(matches!(Operation::decode_set(&invalid_set_resp[1..]), Err(RedisError::Operation(OperationError::InvalidRespType))));
     }
 }
