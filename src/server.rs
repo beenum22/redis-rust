@@ -225,25 +225,25 @@ impl RedisServer {
             _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
         }
 
-        match reader.next().await {
-            Some(Ok(msg)) => {
-                match Operation::decode(msg)? {
-                    Operation::ReplicaConf(conf) => {
-                        match &conf[0] {
-                            ReplicaConfigOperation::GetAck(val) => match val.as_str() {
-                                "*" => {
-                                    writer.send(Operation::encode(Operation::ReplicaConf(vec![ReplicaConfigOperation::Ack(0)]))?).await?;
-                                },
-                                _ => error!("Received invalid GETACK argument value for acknowledgement by the master server.")
-                            },
-                            _ => error!("Received invalid replconf type command for acknowledgement by the master server."),
-                        }
-                    },
-                    _ => error!("Received invalid replconf type command for acknowledgement by the master server."),
-                }
-            }
-            _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
-        }
+        // match reader.next().await {
+        //     Some(Ok(msg)) => {
+        //         match Operation::decode(msg)? {
+        //             Operation::ReplicaConf(conf) => {
+        //                 match &conf[0] {
+        //                     ReplicaConfigOperation::GetAck(val) => match val.as_str() {
+        //                         "*" => {
+        //                             writer.send(Operation::encode(Operation::ReplicaConf(vec![ReplicaConfigOperation::Ack(0)]))?).await?;
+        //                         },
+        //                         _ => error!("Received invalid GETACK argument value for acknowledgement by the master server.")
+        //                     },
+        //                     _ => error!("Received invalid replconf type command for acknowledgement by the master server."),
+        //                 }
+        //             },
+        //             _ => error!("Received invalid replconf type command for acknowledgement by the master server."),
+        //         }
+        //     }
+        //     _ => return Err(RedisError::Replica(ReplicaError::ConfigurationFailed))
+        // }
 
         debug!("Subscribed to the server at {}", server);
         Self::stream_handler(reader, writer, db, broadcaster).await?;
