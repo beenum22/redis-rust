@@ -49,7 +49,7 @@ struct Cli {
     #[arg(long)]
     replicaof: Option<String>,
 
-    #[arg(short, long, default_value = "info")]
+    #[arg(short, long, default_value = "debug")]
     logging: String,
 }
 
