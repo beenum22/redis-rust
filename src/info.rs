@@ -4,7 +4,7 @@ use std::{collections::HashSet, net::SocketAddr};
 pub(crate) struct ReplicationInfo {
     pub(crate) role: String,
     pub(crate) master_replid: String,
-    pub(crate) master_repl_offset: i16,
+    pub(crate) master_repl_offset: usize,
     pub(crate) connected_slaves: u16,
     pub(crate) slaves: HashSet<SocketAddr>
 }

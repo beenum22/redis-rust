@@ -26,6 +26,26 @@ pub(crate) enum RespType {
     //     Push(String)
 }
 
+impl RespType {
+    pub(crate) fn raw_len(&self) -> Result<usize, RedisError> {
+        match self {
+            RespType::String(val) => Ok(1 + val.len() + 2),
+            RespType::Error(val) => Ok(5 + val.len() + 2),
+            RespType::Integer(val) => Ok(1 + val.to_string().len() + 2),
+            RespType::BulkString(val) => Ok(1 + val.len().to_string().len() + 2 + val.len() + 2),
+            RespType::Array(vals) => {
+                let mut l: usize = 1 + vals.len().to_string().len() + 2;
+                for i in vals {
+                    l += i.raw_len()?;
+                }
+                Ok(l)
+            },
+            RespType::Null => Ok(4),
+            RespType::RDB(bytes) => Ok(1 + bytes.len().to_string().len() + 2 + bytes.len()),
+        }
+    }
+}
+
 pub(crate) struct RespParser {
     // raw: &BytesMut,
 }

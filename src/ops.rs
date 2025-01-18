@@ -16,7 +16,7 @@ pub(crate) enum ReplicaConfigOperation {
     ListeningPort(u16),
     Capabilities(String),
     GetAck(String),
-    Ack(u16),
+    Ack(usize),
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -67,6 +67,8 @@ impl MessageType {
     }
 }
 
+trait ByteSize {}
+
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum Operation {
     Ping,
@@ -76,6 +78,7 @@ pub(crate) enum Operation {
     Subscribe,  // Internal operation
     Queue,  // Internal operation
     RegisterReplica,  // Internal operation
+    IncrementReplicaOffset(usize),  // Internal operation
     Echo(String),
     EchoString(String),
     EchoBytes(Bytes),

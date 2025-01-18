@@ -111,6 +111,17 @@ impl State {
         Ok(info_rw.replication.connected_slaves)
     }
 
+    pub async fn get_replication_offset(info: Arc<RwLock<Info>>) -> Result<usize, RedisError> {
+        let info_ro = info.read().await;
+        Ok(info_ro.replication.master_repl_offset)
+    }
+
+    pub async fn increment_replication_offset(info: Arc<RwLock<Info>>, size: usize) -> Result<usize, RedisError> {
+        let mut info_rw = info.write().await;
+        info_rw.replication.master_repl_offset += size;
+        Ok(info_rw.replication.master_repl_offset)
+    }
+
     pub(crate) async fn get_key(
         state: Arc<RwLock<HashMap<String, SetMap>>>,
         key: &String,

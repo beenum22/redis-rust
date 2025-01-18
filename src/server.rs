@@ -20,7 +20,7 @@ use crate::error::{ConnectionError, ReplicaError, ServerError};
 use crate::info::{ReplicationInfo, ServerInfo};
 use crate::ops::{Operation, Psync, ReplicaConfigOperation};
 // use crate::resp::RespType;
-use crate::resp::RespParser;
+use crate::resp::{RespParser, RespType};
 use crate::{
     Config, ConfigParam, InfoOperation, RDBError, RdbParser,
     RedisBuffer, RedisError, State, SetOverwriteArgs,
@@ -282,7 +282,9 @@ impl RedisServer {
                         ReplicaConfigOperation::GetAck(val) => {
                             if val.as_str() == "*" {
                                 actions.push(
-                                    Operation::ReplicaConf(vec![ReplicaConfigOperation::Ack(0)])
+                                    Operation::ReplicaConf(vec![ReplicaConfigOperation::Ack(
+                                        State::get_replication_offset(db.info.clone()).await.unwrap()
+                                    )])
                                 )
                             }
                         },
@@ -494,10 +496,12 @@ impl RedisServer {
                 trace!("Resp Requested: {:?}-{:?}", result, reader.get_ref().peer_addr());
                 match result {
                     Ok(message) => {
+                        let raw_len = message.raw_len().unwrap();
                         match Operation::decode(message) {
                             Ok(op) => {
                                 trace!("Operation requested: {:?}", op);
-                                let actions = Self::action(reader_db.clone(), op).await.unwrap();
+                                let mut actions = Self::action(reader_db.clone(), op).await.unwrap();
+                                actions.push(Operation::IncrementReplicaOffset(raw_len));
                                 for act in actions {
                                     if let Err(e) = actions_tx.send(act).await {
                                         error!("Failed to take action for message. {:?}", e);
@@ -526,6 +530,12 @@ impl RedisServer {
             while let Some(action) = actions_rx.recv().await {
                 trace!("Action to take: {:?}", action);
                 match action {
+                    Operation::IncrementReplicaOffset(val) => {
+                        let db_clone = db.clone();
+                        if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
+                            error!("Failed to increment replicas offset. {:?}", e);
+                        }
+                    },
                     Operation::Publish(replica_ops) => {
                         for op in replica_ops {
                             if let Err(e) = broadcaster.publish(op) {
