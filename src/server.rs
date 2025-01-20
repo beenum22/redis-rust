@@ -625,7 +625,19 @@ impl RedisServer {
                             }
                             
                         }
-                    }    
+                    }
+                } else {
+                    match action {
+                        Operation::ReplicaConf(_) => match Operation::encode(action) {
+                            Ok(resp) => {
+                                if let Err(e) = writer.send(resp).await {
+                                    error!("Failed to write message to the TCP stream. {:?}", e);
+                                }
+                            },
+                            Err(e) => error!("Failed to decode Resp message. {:?}", e),
+                        }
+                        _ => (),
+                    }   
                 }
                 // tokio::select! {
                 //     _ = shutdown_rx => {
