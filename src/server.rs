@@ -539,104 +539,93 @@ impl RedisServer {
         tokio::spawn(async move {
             while let Some(action) = actions_rx.recv().await {
                 trace!("Action to take: {:?}", action);
-                match action {
-                    Operation::IncrementReplicaOffset(val) => {
-                        let db_clone = db.clone();
-                        if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
-                            error!("Failed to increment replicas offset. {:?}", e);
-                        }
-                    },
-                    Operation::Publish(replica_ops) => {
-                        for op in replica_ops {
-                            if let Err(e) = broadcaster.publish(op) {
-                                error!("Failed to broadcast to the replicas. {:?}.", e);
+                if writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)).unwrap().port() != 6379 {
+                    match action {
+                        Operation::IncrementReplicaOffset(val) => {
+                            let db_clone = db.clone();
+                            if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
+                                error!("Failed to increment replicas offset. {:?}", e);
                             }
-                        }
-                    },
-                    Operation::RegisterReplica => {
-                        let db_clone = db.clone();
-                        match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
-                            Ok(addr) => {
-                                if let Err(e) = State::increment_replicas(db_clone.info.clone(), addr).await {
-                                    error!("Failed to increment replicas count for {:?} addr. {:?}", addr, e);
+                        },
+                        Operation::Publish(replica_ops) => {
+                            for op in replica_ops {
+                                if let Err(e) = broadcaster.publish(op) {
+                                    error!("Failed to broadcast to the replicas. {:?}.", e);
                                 }
-                            },
-                            Err(e) => error!("Failed to get stream peer address needed for replica increment. {:?}", e),
-                        }
-                    },
-                    Operation::Queue => {
-                        let db_clone = db.clone();
-                        let mut broadcast_rx = broadcaster.subscribe();
-                        let queue_in_clone = queue_in.clone();
-                        match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
-                            Ok(addr) => {
-                                tokio::spawn(async move {
-                                    while let Ok(replica_op) = broadcast_rx.recv().await {
-                                        if State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
-                                            if let Err(e) = queue_in_clone.send(replica_op) {
-                                                error!("Failed to queue published operations for the replica TCP stream. {:?}", e);
-                                            }
-                                        } else {
-                                            break
-                                        }
-                                    }
-                                });
-                            },
-                            Err(e) => error!("Failed to get stream peer address needed for queue broadcasted operations. {:?}", e),
-                        }
-                    }
-                    Operation::Subscribe => {
-                        let db_clone = db.clone();
-                        let mut broadcast_rx = broadcaster.subscribe();
-                        let queue_in_clone = queue_in.clone();
-                        let mut queue_out = queue_in_clone.subscribe();
-                        match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
-                            Ok(addr) => {
-                                while State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
-                                    if let Ok(queue_op) = queue_out.recv().await {
-                                        if let Err(e) = writer.send(Operation::encode(queue_op).unwrap()).await {
-                                            error!("Failed to write queued message to the TCP stream. {:?}", e);
-                                        }
-                                    }
-                                }
-                            },
-                            Err(e) => error!("Failed to get stream peer address needed for operations subscription. {:?}", e),
-                        };
-                        while let Ok(replica_op) = broadcast_rx.recv().await {
-                            match Operation::encode(replica_op) {
-                                Ok(resp) => {
-                                    if let Err(e) = writer.send(resp).await {
-                                        error!("Failed to write broadcasted message to the TCP stream. {:?}", e);
+                            }
+                        },
+                        Operation::RegisterReplica => {
+                            let db_clone = db.clone();
+                            match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
+                                Ok(addr) => {
+                                    if let Err(e) = State::increment_replicas(db_clone.info.clone(), addr).await {
+                                        error!("Failed to increment replicas count for {:?} addr. {:?}", addr, e);
                                     }
                                 },
-                                Err(e) => error!("Failed to decode Resp message. {:?}", e),
+                                Err(e) => error!("Failed to get stream peer address needed for replica increment. {:?}", e),
+                            }
+                        },
+                        Operation::Queue => {
+                            let db_clone = db.clone();
+                            let mut broadcast_rx = broadcaster.subscribe();
+                            let queue_in_clone = queue_in.clone();
+                            match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
+                                Ok(addr) => {
+                                    tokio::spawn(async move {
+                                        while let Ok(replica_op) = broadcast_rx.recv().await {
+                                            if State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
+                                                if let Err(e) = queue_in_clone.send(replica_op) {
+                                                    error!("Failed to queue published operations for the replica TCP stream. {:?}", e);
+                                                }
+                                            } else {
+                                                break
+                                            }
+                                        }
+                                    });
+                                },
+                                Err(e) => error!("Failed to get stream peer address needed for queue broadcasted operations. {:?}", e),
                             }
                         }
-                    },
-                    Operation::Ok => {
-                        // TODO: Remove hardcoded port
-                        if writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)).unwrap().port() != 6379 {
+                        Operation::Subscribe => {
+                            let db_clone = db.clone();
+                            let mut broadcast_rx = broadcaster.subscribe();
+                            let queue_in_clone = queue_in.clone();
+                            let mut queue_out = queue_in_clone.subscribe();
+                            match writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)) {
+                                Ok(addr) => {
+                                    while State::has_replica(db_clone.info.clone(), &addr).await.unwrap() == false {
+                                        if let Ok(queue_op) = queue_out.recv().await {
+                                            if let Err(e) = writer.send(Operation::encode(queue_op).unwrap()).await {
+                                                error!("Failed to write queued message to the TCP stream. {:?}", e);
+                                            }
+                                        }
+                                    }
+                                },
+                                Err(e) => error!("Failed to get stream peer address needed for operations subscription. {:?}", e),
+                            };
+                            while let Ok(replica_op) = broadcast_rx.recv().await {
+                                match Operation::encode(replica_op) {
+                                    Ok(resp) => {
+                                        if let Err(e) = writer.send(resp).await {
+                                            error!("Failed to write broadcasted message to the TCP stream. {:?}", e);
+                                        }
+                                    },
+                                    Err(e) => error!("Failed to decode Resp message. {:?}", e),
+                                }
+                            }
+                        },
+                        _ => {
                             match Operation::encode(action) {
                                 Ok(resp) => {
                                     if let Err(e) = writer.send(resp).await {
-                                        error!("Failed to write Ok response to the TCP stream. {:?}", e);
+                                        error!("Failed to write message to the TCP stream. {:?}", e);
                                     }
                                 },
                                 Err(e) => error!("Failed to decode Resp message. {:?}", e),
                             }
+                            
                         }
-                    },
-                    _ => {
-                        match Operation::encode(action) {
-                            Ok(resp) => {
-                                if let Err(e) = writer.send(resp).await {
-                                    error!("Failed to write message to the TCP stream. {:?}", e);
-                                }
-                            },
-                            Err(e) => error!("Failed to decode Resp message. {:?}", e),
-                        }
-                        
-                    }
+                    }    
                 }
                 // tokio::select! {
                 //     _ = shutdown_rx => {
