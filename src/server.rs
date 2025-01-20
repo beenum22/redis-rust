@@ -628,6 +628,12 @@ impl RedisServer {
                     }
                 } else {
                     match action {
+                        Operation::IncrementReplicaOffset(val) => {
+                            let db_clone = db.clone();
+                            if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
+                                error!("Failed to increment replicas offset. {:?}", e);
+                            }
+                        },
                         Operation::ReplicaConf(_) => match Operation::encode(action) {
                             Ok(resp) => {
                                 if let Err(e) = writer.send(resp).await {
