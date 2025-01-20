@@ -479,7 +479,12 @@ impl RedisServer {
     }
 
     // async fn stream_handler_v2(mut stream: TcpStream, db: Arc<State>, broadcaster: Arc<BroadcasterV2>) -> Result<(), RedisError> {
-    async fn stream_handler(mut reader: FramedRead<OwnedReadHalf, RespParser>, mut writer: FramedWrite<OwnedWriteHalf, RespParser>, db: Arc<State>, broadcaster: Arc<Broadcaster>) -> Result<(), RedisError> {
+    async fn stream_handler(
+        mut reader: FramedRead<OwnedReadHalf, RespParser>,
+        mut writer: FramedWrite<OwnedWriteHalf, RespParser>,
+        db: Arc<State>,
+        broadcaster: Arc<Broadcaster>
+    ) -> Result<(), RedisError> {
         // let actions: (mpsc::Sender<OperationV2>, mpsc::Receiver<OperationV2>) = mpsc::channel(100);
         // let (req_tx, mut req_rx): (mpsc::Sender<OperationV2>, mpsc::Receiver<OperationV2>) = mpsc::channel(100);
         // let queue: (broadcast::Sender<OperationV2>, broadcast::Receiver<OperationV2>) = broadcast::channel(16);
@@ -501,7 +506,12 @@ impl RedisServer {
                             Ok(op) => {
                                 trace!("Operation requested: {:?}", op);
                                 let mut actions = Self::action(reader_db.clone(), op).await.unwrap();
-                                actions.push(Operation::IncrementReplicaOffset(raw_len));
+                                match State::get_role(reader_db.info.clone()).await {
+                                    Ok(role) => if role.as_str() == "slave" {
+                                        actions.push(Operation::IncrementReplicaOffset(raw_len));
+                                    },
+                                    Err(e) => error!("Failed to get node role from the state. {:?}", e),
+                                };
                                 for act in actions {
                                     if let Err(e) = actions_tx.send(act).await {
                                         error!("Failed to take action for message. {:?}", e);
@@ -644,7 +654,13 @@ impl RedisServer {
 
 
     pub(crate) async fn run(&self) {
-        let listener = TcpListener::bind(self.node.socket()).await.unwrap();
+        let listener = match TcpListener::bind(self.node.socket()).await {
+            Ok(listener) => listener,
+            Err(e) => {
+                error!("Failed to bind TCP listener: {}", e);
+                return
+            }
+        };
         info!(
             "Redis Server is running on {}:{}",
             self.node.ip(),
@@ -673,11 +689,13 @@ impl RedisServer {
                     debug!("New TCP connection from {:?}", addr);
                     let db = self.db.clone();
                     let broadcast = self.broadcast.clone();
+                    let (ro_tx, rx_writer) = stream.into_split();
+                    let reader = FramedRead::new(ro_tx, RespParser::new());
+                    let writer = FramedWrite::new(rx_writer, RespParser::new());
                     tokio::spawn(async move {
-                        let (ro_tx, rx_writer) = stream.into_split();
-                        let reader = FramedRead::new(ro_tx, RespParser::new());
-                        let mut writer = FramedWrite::new(rx_writer, RespParser::new());
-                        Self::stream_handler(reader, writer, db, broadcast).await;
+                        if let Err(e) = Self::stream_handler(reader, writer, db, broadcast).await {
+                            error!("Failed handle TCP stream from {:?}", addr)
+                        }
                     });
                 },
                 Err(e) => {

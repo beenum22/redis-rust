@@ -79,12 +79,12 @@ impl State {
         Ok(())
     }
 
-    pub async fn get_info<'a>(info: Arc<RwLock<Info>>) -> Result<Info, RedisError> {
+    pub async fn get_info(info: Arc<RwLock<Info>>) -> Result<Info, RedisError> {
         let info_ro = info.read().await;
         Ok(info_ro.clone())
     }
 
-    pub async fn get_role<'a>(info: Arc<RwLock<Info>>) -> Result<String, RedisError> {
+    pub async fn get_role(info: Arc<RwLock<Info>>) -> Result<String, RedisError> {
         let info_ro = info.read().await;
         Ok(info_ro.replication.role.clone())
     }
