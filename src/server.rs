@@ -505,10 +505,13 @@ impl RedisServer {
                         match Operation::decode(message) {
                             Ok(op) => {
                                 trace!("Operation requested: {:?}", op);
-                                let mut actions = Self::action(reader_db.clone(), op).await.unwrap();
+                                let actions = Self::action(reader_db.clone(), op).await.unwrap();
                                 match State::get_role(reader_db.info.clone()).await {
                                     Ok(role) => if role.as_str() == "slave" {
-                                        actions.push(Operation::IncrementReplicaOffset(raw_len));
+                                        trace!("Incrementing replica offset by {:?}", raw_len);
+                                        if let Err(e) = State::increment_replication_offset(reader_db.info.clone(), raw_len).await {
+                                            error!("Failed to increment replicas offset. {:?}", e);
+                                        }
                                     },
                                     Err(e) => error!("Failed to get node role from the state. {:?}", e),
                                 };
@@ -541,12 +544,12 @@ impl RedisServer {
                 trace!("Action to take: {:?}", action);
                 if writer.get_ref().peer_addr().map_err(|_| RedisError::Server(ServerError::TcpStreamFailure)).unwrap().port() != 6379 {
                     match action {
-                        Operation::IncrementReplicaOffset(val) => {
-                            let db_clone = db.clone();
-                            if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
-                                error!("Failed to increment replicas offset. {:?}", e);
-                            }
-                        },
+                        // Operation::IncrementReplicaOffset(val) => {
+                        //     let db_clone = db.clone();
+                        //     if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
+                        //         error!("Failed to increment replicas offset. {:?}", e);
+                        //     }
+                        // },
                         Operation::Publish(replica_ops) => {
                             for op in replica_ops {
                                 if let Err(e) = broadcaster.publish(op) {
@@ -628,12 +631,12 @@ impl RedisServer {
                     }
                 } else {
                     match action {
-                        Operation::IncrementReplicaOffset(val) => {
-                            let db_clone = db.clone();
-                            if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
-                                error!("Failed to increment replicas offset. {:?}", e);
-                            }
-                        },
+                        // Operation::IncrementReplicaOffset(val) => {
+                        //     let db_clone = db.clone();
+                        //     if let Err(e) = State::increment_replication_offset(db_clone.info.clone(), val).await {
+                        //         error!("Failed to increment replicas offset. {:?}", e);
+                        //     }
+                        // },
                         Operation::ReplicaConf(_) => match Operation::encode(action) {
                             Ok(resp) => {
                                 if let Err(e) = writer.send(resp).await {
