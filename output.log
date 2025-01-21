@@ -217,3 +217,2391 @@
 [TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
 [TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
 [TRACE] Action to take: Ok
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:51509
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:51509)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:51509)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:51509)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:51509)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: ReplicaConf([GetAck("*")])
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Operation to encode: ReplicaConf([GetAck("*")])
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: Subscribe
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("GETACK"), BulkString("*")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("GETACK"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("ACK"), BulkString("0")]))-Ok(127.0.0.1:51509)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("ACK"), BulkString("0")])
+[TRACE] Operation requested: ReplicaConf([])
+[DEBUG] New TCP connection from 127.0.0.1:51510
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:51510)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[DEBUG] New TCP connection from 127.0.0.1:51513
+[TRACE] Resp Requested: Ok(Array([BulkString("replconf"), BulkString("getack"), BulkString("cmd"), BulkString("internal")]))-Ok(127.0.0.1:51513)
+[TRACE] RESP type to decode: Array([BulkString("replconf"), BulkString("getack"), BulkString("cmd"), BulkString("internal")])
+[ERROR] Failed to decode Resp message. SyntaxError
+[TRACE] Action to take: Error("SyntaxError")
+[TRACE] Operation to encode: Error("SyntaxError")
+[DEBUG] New TCP connection from 127.0.0.1:51516
+[TRACE] Resp Requested: Ok(Array([BulkString("replconf"), BulkString("GETACK"), BulkString("cmd"), BulkString("internal")]))-Ok(127.0.0.1:51516)
+[TRACE] RESP type to decode: Array([BulkString("replconf"), BulkString("GETACK"), BulkString("cmd"), BulkString("internal")])
+[ERROR] Failed to decode Resp message. SyntaxError
+[TRACE] Action to take: Error("SyntaxError")
+[TRACE] Operation to encode: Error("SyntaxError")
+[DEBUG] New TCP connection from 127.0.0.1:51536
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND"), BulkString("DOCS")]))-Ok(127.0.0.1:51536)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND"), BulkString("DOCS")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("INFO"), BulkString("SERVER")]))-Ok(127.0.0.1:51536)
+[TRACE] RESP type to decode: Array([BulkString("INFO"), BulkString("SERVER")])
+[TRACE] Operation requested: Info([Server])
+[TRACE] Action to take: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Operation to encode: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND")]))-Ok(127.0.0.1:51536)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:51536)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[DEBUG] New TCP connection from 127.0.0.1:51539
+[TRACE] Resp Requested: Ok(Array([BulkString("replconf"), BulkString("GETACK"), BulkString("cmd"), BulkString("internal")]))-Ok(127.0.0.1:51539)
+[TRACE] RESP type to decode: Array([BulkString("replconf"), BulkString("GETACK"), BulkString("cmd"), BulkString("internal")])
+[ERROR] Failed to decode Resp message. SyntaxError
+[TRACE] Action to take: Error("SyntaxError")
+[TRACE] Operation to encode: Error("SyntaxError")
+[DEBUG] New TCP connection from 127.0.0.1:51540
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND"), BulkString("DOCS")]))-Ok(127.0.0.1:51540)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND"), BulkString("DOCS")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("INFO"), BulkString("SERVER")]))-Ok(127.0.0.1:51540)
+[TRACE] RESP type to decode: Array([BulkString("INFO"), BulkString("SERVER")])
+[TRACE] Operation requested: Info([Server])
+[TRACE] Action to take: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Operation to encode: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND")]))-Ok(127.0.0.1:51540)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:51540)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:62326
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:62326)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(43)])
+[TRACE] Operation to encode: ReplicaConf([Ack(43)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:62326)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(86)])
+[TRACE] Operation to encode: ReplicaConf([Ack(86)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:62338
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:62338)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:62338)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(59)])
+[TRACE] Operation to encode: ReplicaConf([Ack(59)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:64712
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND"), BulkString("DOCS")]))-Ok(127.0.0.1:64712)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND"), BulkString("DOCS")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("INFO"), BulkString("SERVER")]))-Ok(127.0.0.1:64712)
+[TRACE] RESP type to decode: Array([BulkString("INFO"), BulkString("SERVER")])
+[TRACE] Operation requested: Info([Server])
+[TRACE] Action to take: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Operation to encode: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND")]))-Ok(127.0.0.1:64712)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:64712)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(107)])
+[TRACE] Operation to encode: ReplicaConf([Ack(107)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:64714
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:64714)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(37)])
+[TRACE] Operation to encode: ReplicaConf([Ack(37)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:64714)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:64714)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(88)])
+[TRACE] Operation to encode: ReplicaConf([Ack(88)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:64733
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:64733)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:64733)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:52137
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:52137)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52137)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52137)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:52170
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52170)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 0
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52170)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 0
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52170)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 0
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52170)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 0
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52170)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 0
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:52170)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52170)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 0
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:52182
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52182)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 0
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52182)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 37
+[TRACE] Action to take: ReplicaConf([Ack(37)])
+[TRACE] Operation to encode: ReplicaConf([Ack(37)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52182)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 74
+[TRACE] Action to take: ReplicaConf([Ack(74)])
+[TRACE] Operation to encode: ReplicaConf([Ack(74)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:52182)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] YOOO 111
+[TRACE] Action to take: ReplicaConf([Ack(111)])
+[TRACE] Operation to encode: ReplicaConf([Ack(111)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:59368
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Action to take: ReplicaConf([Ack(37)])
+[TRACE] Operation to encode: ReplicaConf([Ack(37)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Action to take: ReplicaConf([Ack(74)])
+[TRACE] Operation to encode: ReplicaConf([Ack(74)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Action to take: ReplicaConf([Ack(125)])
+[TRACE] Operation to encode: ReplicaConf([Ack(125)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Action to take: ReplicaConf([Ack(162)])
+[TRACE] Operation to encode: ReplicaConf([Ack(162)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Action to take: ReplicaConf([Ack(199)])
+[TRACE] Operation to encode: ReplicaConf([Ack(199)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:59368)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Action to take: ReplicaConf([Ack(250)])
+[TRACE] Operation to encode: ReplicaConf([Ack(250)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6379
+[ERROR] Failed to bind TCP listener: Address already in use (os error 48)
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:55654
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:55654)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:55654)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Action to take: IncrementReplicaOffset(49)
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:55654)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Action to take: IncrementReplicaOffset(59)
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:55654)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[TRACE] Action to take: RegisterReplica
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:55656
+[TRACE] Resp Requested: Ok(Array([BulkString("replconf"), BulkString("GETACK"), BulkString("Applications"), BulkString("bin"), BulkString("cores"), BulkString("dev"), BulkString("etc"), BulkString("home"), BulkString("Library"), BulkString("opt"), BulkString("private"), BulkString("sbin"), BulkString("System"), BulkString("tmp"), BulkString("Users"), BulkString("usr"), BulkString("var"), BulkString("Volumes")]))-Ok(127.0.0.1:55656)
+[TRACE] RESP type to decode: Array([BulkString("replconf"), BulkString("GETACK"), BulkString("Applications"), BulkString("bin"), BulkString("cores"), BulkString("dev"), BulkString("etc"), BulkString("home"), BulkString("Library"), BulkString("opt"), BulkString("private"), BulkString("sbin"), BulkString("System"), BulkString("tmp"), BulkString("Users"), BulkString("usr"), BulkString("var"), BulkString("Volumes")])
+[ERROR] Failed to decode Resp message. SyntaxError
+[TRACE] Action to take: Error("SyntaxError")
+[TRACE] Operation to encode: Error("SyntaxError")
+[DEBUG] New TCP connection from 127.0.0.1:55657
+[TRACE] Resp Requested: Ok(Array([BulkString("replconf"), BulkString("GETACK"), BulkString("Applications"), BulkString("bin"), BulkString("cores"), BulkString("dev"), BulkString("etc"), BulkString("home"), BulkString("Library"), BulkString("opt"), BulkString("private"), BulkString("sbin"), BulkString("System"), BulkString("tmp"), BulkString("Users"), BulkString("usr"), BulkString("var"), BulkString("Volumes")]))-Ok(127.0.0.1:55657)
+[TRACE] RESP type to decode: Array([BulkString("replconf"), BulkString("GETACK"), BulkString("Applications"), BulkString("bin"), BulkString("cores"), BulkString("dev"), BulkString("etc"), BulkString("home"), BulkString("Library"), BulkString("opt"), BulkString("private"), BulkString("sbin"), BulkString("System"), BulkString("tmp"), BulkString("Users"), BulkString("usr"), BulkString("var"), BulkString("Volumes")])
+[ERROR] Failed to decode Resp message. SyntaxError
+[TRACE] Action to take: Error("SyntaxError")
+[TRACE] Operation to encode: Error("SyntaxError")
+[DEBUG] New TCP connection from 127.0.0.1:55659
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND"), BulkString("DOCS")]))-Ok(127.0.0.1:55659)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND"), BulkString("DOCS")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("INFO"), BulkString("SERVER")]))-Ok(127.0.0.1:55659)
+[TRACE] RESP type to decode: Array([BulkString("INFO"), BulkString("SERVER")])
+[TRACE] Operation requested: Info([Server])
+[TRACE] Action to take: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Operation to encode: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Action to take: IncrementReplicaOffset(26)
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND")]))-Ok(127.0.0.1:55659)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:55659)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:55659)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(162)])
+[TRACE] Operation to encode: ReplicaConf([Ack(162)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:55659)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(199)])
+[TRACE] Operation to encode: ReplicaConf([Ack(199)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:55659)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(236)])
+[TRACE] Operation to encode: ReplicaConf([Ack(236)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56040
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:56040)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:56040)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Action to take: IncrementReplicaOffset(49)
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:56040)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Action to take: IncrementReplicaOffset(59)
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:56040)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56041
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND"), BulkString("DOCS")]))-Ok(127.0.0.1:56041)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND"), BulkString("DOCS")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("INFO"), BulkString("SERVER")]))-Ok(127.0.0.1:56041)
+[TRACE] RESP type to decode: Array([BulkString("INFO"), BulkString("SERVER")])
+[TRACE] Operation requested: Info([Server])
+[TRACE] Action to take: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Operation to encode: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Action to take: IncrementReplicaOffset(26)
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND")]))-Ok(127.0.0.1:56041)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[DEBUG] New TCP connection from 127.0.0.1:56043
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND"), BulkString("DOCS")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND"), BulkString("DOCS")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("INFO"), BulkString("SERVER")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("INFO"), BulkString("SERVER")])
+[TRACE] Operation requested: Info([Server])
+[TRACE] Action to take: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Operation to encode: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Action to take: IncrementReplicaOffset(26)
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(26)])
+[TRACE] Operation to encode: ReplicaConf([Ack(26)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(63)])
+[TRACE] Operation to encode: ReplicaConf([Ack(63)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(100)])
+[TRACE] Operation to encode: ReplicaConf([Ack(100)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(165)])
+[TRACE] Operation to encode: ReplicaConf([Ack(165)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:56043)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56082
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:56082)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:56082)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Action to take: IncrementReplicaOffset(49)
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:56082)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Action to take: IncrementReplicaOffset(59)
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:56082)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 122")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:56392
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:56392)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:56392)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:56392)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:56392)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56393
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56393)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56393)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56393)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[DEBUG] New TCP connection from 127.0.0.1:56394
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56394)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:56394)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56394)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56394)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(88)])
+[TRACE] Operation to encode: ReplicaConf([Ack(88)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56394)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(125)])
+[TRACE] Operation to encode: ReplicaConf([Ack(125)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56394)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(162)])
+[TRACE] Operation to encode: ReplicaConf([Ack(162)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:56691
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:56691)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:56691)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:56691)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:56691)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: RegisterReplica
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56692
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56692)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:56754
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:56754)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:56754)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:56754)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:56754)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56756
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:56756)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:56756)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[DEBUG] New TCP connection from 127.0.0.1:56758
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56758)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:56758)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56758)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56758)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(88)])
+[TRACE] Operation to encode: ReplicaConf([Ack(88)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56781
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:56781)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:56781)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:56781)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:56781)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: Subscribe
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:56803
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56803)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56803)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(37)])
+[TRACE] Operation to encode: ReplicaConf([Ack(37)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:56803)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(74)])
+[TRACE] Operation to encode: ReplicaConf([Ack(74)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:57068
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:57068)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:57068)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:57068)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:57068)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: RegisterReplica
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57074
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:57074)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:57074)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:57074)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:57074)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[DEBUG] New TCP connection from 127.0.0.1:57075
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57075)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:57074)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57075)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(37)])
+[TRACE] Operation to encode: ReplicaConf([Ack(37)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("get"), BulkString("foo")]))-Ok(127.0.0.1:57075)
+[TRACE] RESP type to decode: Array([BulkString("get"), BulkString("foo")])
+[TRACE] Operation requested: Get("foo")
+[DEBUG] Debug SetMap SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None }
+[TRACE] Action to take: Echo("bar")
+[TRACE] Operation to encode: Echo("bar")
+[TRACE] Action to take: IncrementReplicaOffset(22)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57091
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:57091)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:57091)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:57091)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:57091)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57099
+[TRACE] Resp Requested: Ok(Array([BulkString("get"), BulkString("foo")]))-Ok(127.0.0.1:57099)
+[TRACE] RESP type to decode: Array([BulkString("get"), BulkString("foo")])
+[TRACE] Operation requested: Get("foo")
+[TRACE] Action to take: Nil
+[TRACE] Operation to encode: Nil
+[TRACE] Action to take: IncrementReplicaOffset(22)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57099)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(22)])
+[TRACE] Operation to encode: ReplicaConf([Ack(22)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57099)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(59)])
+[TRACE] Operation to encode: ReplicaConf([Ack(59)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:57100
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:57100)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:57100)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:57100)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:57100)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: Subscribe
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57101
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:57101)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[DEBUG] New TCP connection from 127.0.0.1:57112
+[TRACE] Resp Requested: Ok(Array([BulkString("get"), BulkString("foo")]))-Ok(127.0.0.1:57112)
+[TRACE] RESP type to decode: Array([BulkString("get"), BulkString("foo")])
+[TRACE] Operation requested: Get("foo")
+[DEBUG] Debug SetMap SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None }
+[TRACE] Action to take: Echo("bar")
+[TRACE] Operation to encode: Echo("bar")
+[TRACE] Action to take: IncrementReplicaOffset(22)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:57124
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:57124)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:57124)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:57124)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:57124)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57125
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:57125)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[DEBUG] New TCP connection from 127.0.0.1:57126
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57126)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(31)])
+[TRACE] Operation to encode: ReplicaConf([Ack(31)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57139
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:57139)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:57139)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:57139)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:57139)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: Subscribe
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57140
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57140)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:57140)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Action to take: IncrementReplicaOffset(14)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57140)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[DEBUG] New TCP connection from 127.0.0.1:57142
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("raspberry"), BulkString("apple")]))-Ok(127.0.0.1:57142)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("raspberry"), BulkString("apple")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "raspberry", val: "apple", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "raspberry", val: "apple", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "raspberry", val: "apple", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("raspberry"), BulkString("apple")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("raspberry"), BulkString("apple")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "raspberry", val: "apple", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(39)
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("mango"), BulkString("strawberry")]))-Ok(127.0.0.1:57142)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("mango"), BulkString("strawberry")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "mango", val: "strawberry", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "mango", val: "strawberry", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "mango", val: "strawberry", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("mango"), BulkString("strawberry")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("mango"), BulkString("strawberry")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "mango", val: "strawberry", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(41)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57140)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(168)])
+[TRACE] Operation to encode: ReplicaConf([Ack(168)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:57440
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:57440)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:57440)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:57440)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:57440)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: RegisterReplica
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:57441
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57441)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57441)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(37)])
+[TRACE] Operation to encode: ReplicaConf([Ack(37)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:57441)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(74)])
+[TRACE] Operation to encode: ReplicaConf([Ack(74)])
+[TRACE] Action to take: IncrementReplicaOffset(37)
+[DEBUG] New TCP connection from 127.0.0.1:60641
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:60641)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Action to take: IncrementReplicaOffset(31)
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:60983
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:60983)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:60983)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:60983)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:60983)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:60984
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:60984)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[DEBUG] New TCP connection from 127.0.0.1:60985
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:60985)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(31)])
+[TRACE] Operation to encode: ReplicaConf([Ack(31)])
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:60984)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:60985)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(99)])
+[TRACE] Operation to encode: ReplicaConf([Ack(99)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:60985)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(136)])
+[TRACE] Operation to encode: ReplicaConf([Ack(136)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:60985)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:61033
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61033)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61033)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61033)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61033)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61035
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61035)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61035)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(37)])
+[TRACE] Operation to encode: ReplicaConf([Ack(37)])
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61037
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61037)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61037)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61037)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61037)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61038
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61038)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61038)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61038)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[DEBUG] New TCP connection from 127.0.0.1:61067
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:61067)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("bar")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("bar")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "bar", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("ba")]))-Ok(127.0.0.1:61067)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("ba")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "ba", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "ba", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "ba", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "ba", overwrite: None, keepttl: None, expiry_timestamp: None })
+[ERROR] Failed to write broadcasted message to the TCP stream. IOError(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("ba")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("ba")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "ba", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61038)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(149)])
+[TRACE] Operation to encode: ReplicaConf([Ack(149)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61068
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61068)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61068)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61068)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61068)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61069
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[DEBUG] New TCP connection from 127.0.0.1:61070
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:61070)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("1")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("1")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("bar"), BulkString("2")]))-Ok(127.0.0.1:61070)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("bar"), BulkString("2")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("bar"), BulkString("2")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("bar"), BulkString("2")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(146)])
+[TRACE] Operation to encode: ReplicaConf([Ack(146)])
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:183\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:183\nconnection_slaves:0\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:215\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:215\nconnection_slaves:0\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:247\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:247\nconnection_slaves:0\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:279\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:279\nconnection_slaves:0\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:311\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:311\nconnection_slaves:0\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61069)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:343\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:343\nconnection_slaves:0\n\n")
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61071
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61071)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61071)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61071)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61071)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: Subscribe
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61072
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61072)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:0\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:0\nconnection_slaves:0\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61072)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:32\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:32\nconnection_slaves:0\n\n")
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61074
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61074)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61074)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61074)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61074)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61076
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61076)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61076)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61076)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:51\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:51\nconnection_slaves:0\n\n")
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:61078
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61078)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61078)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61078)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61078)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61079
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61079)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61079)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61079)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:61070)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("1")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[ERROR] Failed to write broadcasted message to the TCP stream. IOError(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[ERROR] Failed to write broadcasted message to the TCP stream. IOError(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("1")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("info"), BulkString("replication")]))-Ok(127.0.0.1:61079)
+[TRACE] RESP type to decode: Array([BulkString("info"), BulkString("replication")])
+[TRACE] Operation requested: Info([Replication])
+[TRACE] Action to take: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:117\nconnection_slaves:0\n\n")
+[TRACE] Operation to encode: Echo("# Replication\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:117\nconnection_slaves:0\n\n")
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61370
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61370)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61370)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61370)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61370)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61371
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61371)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61371)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(14)])
+[TRACE] Operation to encode: ReplicaConf([Ack(14)])
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61372
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61372)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61372)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61372)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61372)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: Subscribe
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61373
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61373)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61373)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61373)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:61070)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("1")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[ERROR] Failed to write broadcasted message to the TCP stream. IOError(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:6379)
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("1")])
+[ERROR] Failed to write broadcasted message to the TCP stream. IOError(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[ERROR] Failed to write broadcasted message to the TCP stream. IOError(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[TRACE] Action to take: Ok
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:61388
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61388)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61388)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61388)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61388)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61390
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61390)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Incrementing replica offset by 37
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61390)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Incrementing replica offset by 14
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61390)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Incrementing replica offset by 37
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[DEBUG] New TCP connection from 127.0.0.1:61481
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:61481)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("foo"), BulkString("1")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("foo"), BulkString("1")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("foo"), BulkString("1")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "foo", val: "1", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Incrementing replica offset by 29
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("bar"), BulkString("2")]))-Ok(127.0.0.1:61481)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("bar"), BulkString("2")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("bar"), BulkString("2")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("bar"), BulkString("2")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "bar", val: "2", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Incrementing replica offset by 29
+[TRACE] Action to take: Ok
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61390)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Incrementing replica offset by 37
+[TRACE] Action to take: ReplicaConf([Ack(146)])
+[TRACE] Operation to encode: ReplicaConf([Ack(146)])
+[INFO] Redis Server is running on 127.0.0.1:6379
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61497
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61497)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61497)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61497)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61497)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: RegisterReplica
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61808
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND"), BulkString("DOCS")]))-Ok(127.0.0.1:61808)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND"), BulkString("DOCS")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[TRACE] Resp Requested: Ok(Array([BulkString("INFO"), BulkString("SERVER")]))-Ok(127.0.0.1:61808)
+[TRACE] RESP type to decode: Array([BulkString("INFO"), BulkString("SERVER")])
+[TRACE] Operation requested: Info([Server])
+[TRACE] Incrementing replica offset by 26
+[TRACE] Action to take: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Operation to encode: Echo("# Server\nredis_version:7.2.6\n\n")
+[TRACE] Resp Requested: Ok(Array([BulkString("COMMAND")]))-Ok(127.0.0.1:61808)
+[TRACE] RESP type to decode: Array([BulkString("COMMAND")])
+[ERROR] Failed to decode Resp message. UnknownCommand
+[TRACE] Action to take: Error("UnknownCommand")
+[TRACE] Operation to encode: Error("UnknownCommand")
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61809
+[TRACE] Operation to encode: Ping
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61809)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61809)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61809)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61809)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61810
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61810)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Incrementing replica offset by 37
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61810)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Incrementing replica offset by 14
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61810)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Incrementing replica offset by 37
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[INFO] Redis Server is running on 127.0.0.1:6380
+[INFO] Connected as replica to 127.0.0.1:6379
+[TRACE] Operation to encode: Ping
+[DEBUG] New TCP connection from 127.0.0.1:61823
+[TRACE] Resp Requested: Ok(Array([BulkString("PING")]))-Ok(127.0.0.1:61823)
+[TRACE] RESP type to decode: Array([BulkString("PING")])
+[TRACE] Operation requested: Ping
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] RESP type to decode: String("PONG")
+[DEBUG] Replica server is reachable
+[TRACE] Operation to encode: ReplicaConf([ListeningPort(6380)])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")]))-Ok(127.0.0.1:61823)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("listening-port"), BulkString("6380")])
+[TRACE] Operation requested: ReplicaConf([ListeningPort(6380)])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica listening port successfully configured
+[TRACE] Operation to encode: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")]))-Ok(127.0.0.1:61823)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("capa"), BulkString("eof"), BulkString("capa"), BulkString("psync2")])
+[TRACE] Operation requested: ReplicaConf([Capabilities("eof"), Capabilities("psync2")])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] RESP type to decode: String("OK")
+[DEBUG] Replica eof and psync2 capabilities successfully configured
+[TRACE] Operation to encode: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Resp Requested: Ok(Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")]))-Ok(127.0.0.1:61823)
+[TRACE] RESP type to decode: Array([BulkString("PSYNC"), BulkString("?"), BulkString("-1")])
+[TRACE] Operation requested: Psync(Psync { replication_id: "?", offset: -1 })
+[TRACE] Action to take: Queue
+[TRACE] Action to take: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Operation to encode: EchoString("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[TRACE] Action to take: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] Operation to encode: EchoBytes(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[TRACE] RESP type to decode: String("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+[DEBUG] Replica state resynchronization details successfully shared
+[TRACE] Action to take: RegisterReplica
+[TRACE] Action to take: Subscribe
+[TRACE] RESP type to decode: RDB(b"REDIS0010\xfa\x03foo\x03bar\xfe\0\xfdaVO\x80\0\x03bar\x03foo\xff")
+[DEBUG] Replica state synchronization successfully initiated
+[DEBUG] Subscribed to the server at 127.0.0.1:6379
+[DEBUG] New TCP connection from 127.0.0.1:61825
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61825)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Incrementing replica offset by 37
+[TRACE] Action to take: ReplicaConf([Ack(0)])
+[TRACE] Operation to encode: ReplicaConf([Ack(0)])
+[TRACE] Resp Requested: Ok(Array([BulkString("ping")]))-Ok(127.0.0.1:61825)
+[TRACE] RESP type to decode: Array([BulkString("ping")])
+[TRACE] Operation requested: Ping
+[TRACE] Incrementing replica offset by 14
+[TRACE] Action to take: EchoString("PONG")
+[TRACE] Operation to encode: EchoString("PONG")
+[TRACE] Resp Requested: Ok(Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")]))-Ok(127.0.0.1:61825)
+[TRACE] RESP type to decode: Array([BulkString("REPLCONF"), BulkString("getack"), BulkString("*")])
+[TRACE] Operation requested: ReplicaConf([GetAck("*")])
+[TRACE] Incrementing replica offset by 37
+[TRACE] Action to take: ReplicaConf([Ack(51)])
+[TRACE] Operation to encode: ReplicaConf([Ack(51)])
+[DEBUG] New TCP connection from 127.0.0.1:61827
+[TRACE] Resp Requested: Ok(Array([BulkString("set"), BulkString("pear"), BulkString("grape")]))-Ok(127.0.0.1:61827)
+[TRACE] RESP type to decode: Array([BulkString("set"), BulkString("pear"), BulkString("grape")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "pear", val: "grape", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Action to take: Publish([Set(SetMap { expiry: None, key: "pear", val: "grape", overwrite: None, keepttl: None, expiry_timestamp: None })])
+[TRACE] Action to take: Ok
+[TRACE] Operation to encode: Ok
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "pear", val: "grape", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "pear", val: "grape", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Operation to encode: Set(SetMap { expiry: None, key: "pear", val: "grape", overwrite: None, keepttl: None, expiry_timestamp: None })
+[ERROR] Failed to write broadcasted message to the TCP stream. IOError(Os { code: 32, kind: BrokenPipe, message: "Broken pipe" })
+[TRACE] Resp Requested: Ok(Array([BulkString("SET"), BulkString("pear"), BulkString("grape")]))-Ok(127.0.0.1:6379)
+[TRACE] RESP type to decode: Array([BulkString("SET"), BulkString("pear"), BulkString("grape")])
+[TRACE] Operation requested: Set(SetMap { expiry: None, key: "pear", val: "grape", overwrite: None, keepttl: None, expiry_timestamp: None })
+[TRACE] Incrementing replica offset by 34
+[TRACE] Action to take: Ok
